@@ -48,10 +48,10 @@ python generate_data.py        # writes transactions.csv + employees.json
 ```bash
 cd backend
 python -m venv .venv
-.venv\Scripts\activate          # Windows
+source .venv/bin/activate       # WSL / Linux / macOS
 pip install -r requirements.txt
-copy ..\.env.example .env        # then fill in keys (optional)
-uvicorn main:app --reload        # http://localhost:8000/docs
+cp ../.env.example .env         # then fill in keys (optional)
+uvicorn main:app --reload       # http://localhost:8000/docs
 ```
 
 Then load + analyze the data:
