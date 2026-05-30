@@ -22,7 +22,7 @@ export function TalkToData() {
   const [playAudio, setPlayAudio] = useState(true);
 
   return (
-    <div className="flex flex-col h-full bg-background text-on-background min-h-screen">
+    <div className="flex flex-col h-full bg-background text-on-background min-h-[95vh]">
       {/* Top Navigation Header */}
       <div className="px-8 py-5 border-b border-outline-variant bg-white sticky top-0 z-10 flex justify-between items-center">
         <Link 
@@ -42,7 +42,7 @@ export function TalkToData() {
       <div className="p-8 max-w-[1300px] mx-auto w-full grid grid-cols-1 lg:grid-cols-5 gap-6">
         
         {/* Left Column (Voice Input Card) */}
-        <div className="lg:col-span-2 border border-outline-variant/65 rounded-xl bg-white p-6 shadow-sm flex flex-col justify-between min-h-[500px]">
+        <div className="lg:col-span-2 border border-outline-variant/65 rounded-xl bg-white p-6 shadow-sm flex flex-col justify-between min-h-[500px] lg:min-h-[calc(95vh-110px)]">
           {/* Centered Microphone Indicator */}
           <div className="flex-grow flex items-center justify-center">
             <div className="w-20 h-20 rounded-2xl bg-white border border-outline-variant flex items-center justify-center shadow-lg text-secondary">
@@ -81,7 +81,7 @@ export function TalkToData() {
         </div>
 
         {/* Right Column (AI Insight Output Card) */}
-        <div className="lg:col-span-3 border border-outline-variant/65 rounded-xl bg-white p-6 shadow-sm flex flex-col justify-between min-h-[500px] relative overflow-hidden ai-glow">
+        <div className="lg:col-span-3 border border-outline-variant/65 rounded-xl bg-white p-6 shadow-sm flex flex-col justify-between min-h-[500px] lg:min-h-[calc(95vh-110px)] relative overflow-hidden ai-glow">
           <div>
             {/* Header / Play Audio Toggle */}
             <div className="flex justify-between items-center border-b border-outline-variant/50 pb-4 mb-4">
