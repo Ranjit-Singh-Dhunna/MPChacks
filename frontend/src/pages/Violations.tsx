@@ -11,7 +11,7 @@ export function Violations() {
   // Render "Compliance Case Detail" if a case is clicked
   if (selectedCase) {
     return (
-      <div className="flex flex-col h-full bg-background text-on-background min-h-screen">
+      <div className="flex flex-col h-full bg-background text-on-background min-h-[95vh]">
         {/* Top Header */}
         <div className="px-8 py-5 border-b border-outline-variant bg-white sticky top-0 z-10">
           <div className="flex justify-between items-center">
@@ -246,7 +246,7 @@ export function Violations() {
 
   // Otherwise, show list audit table
   return (
-    <div className="flex flex-col h-full bg-background text-on-background min-h-screen">
+    <div className="flex flex-col h-full bg-background text-on-background min-h-[95vh]">
       
       {/* Top Header Actions */}
       <div className="px-8 py-5 border-b border-outline-variant bg-white sticky top-0 z-10">
@@ -268,9 +268,6 @@ export function Violations() {
               <span className="material-symbols-outlined text-[16px]">publish</span>
               Upload Policy PDF
             </button>
-            <div className="w-8 h-8 rounded-full border border-outline-variant bg-surface-container flex items-center justify-center font-bold text-secondary text-sm">
-              M
-            </div>
           </div>
         </div>
       </div>

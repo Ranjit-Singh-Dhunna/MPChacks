@@ -19,7 +19,7 @@ export function ExpenseReports() {
   const [filterActive, setFilterActive] = useState(false);
 
   return (
-    <div className="flex flex-col h-full bg-background text-on-background min-h-screen">
+    <div className="flex flex-col h-full bg-background text-on-background min-h-[95vh]">
       
       {/* Top Breadcrumb bar */}
       <div className="px-8 py-4 border-b border-outline-variant/65 bg-white sticky top-0 z-10 flex justify-between items-center">
