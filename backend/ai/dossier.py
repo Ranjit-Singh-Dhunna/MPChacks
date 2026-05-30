@@ -58,7 +58,7 @@ def _deterministic_reco(util: float, violations: int, flag: str | None) -> dict:
             "risk_factors": risk, "mitigating_factors": mitig}
 
 
-def build_dossier(db: Session, txn: Transaction) -> ApprovalDossier:
+def prepare_dossier_data(db: Session, txn: Transaction) -> dict:
     emp = db.query(Employee).filter_by(employee_id=txn.employee_id).first()
     window_start = txn.transaction_date - timedelta(days=30)
     history = (db.query(Transaction)
@@ -67,6 +67,20 @@ def build_dossier(db: Session, txn: Transaction) -> ApprovalDossier:
                        Transaction.transaction_date <= txn.transaction_date)
                .order_by(Transaction.transaction_date.desc())
                .all())
+    return {
+        "txn": TransactionResponse.model_validate(txn),
+        "emp": EmployeeResponse.model_validate(emp) if emp else None,
+        "history": [TransactionResponse.model_validate(t) for t in history],
+        "job_level": txn.job_level
+    }
+
+
+def build_dossier_from_data(data: dict) -> ApprovalDossier:
+    txn = data["txn"]
+    emp = data["emp"]
+    history = data["history"]
+    job_level = data["job_level"]
+
     month_spend = sum(t.amount_cad for t in history)
     budget = emp.monthly_budget if emp else 1.0
     util = month_spend / budget if budget else 0.0
@@ -75,7 +89,7 @@ def build_dossier(db: Session, txn: Transaction) -> ApprovalDossier:
     reco = _deterministic_reco(util, violations, txn.policy_flag)
     if gemini.available:
         ai = gemini.call_json(_PROMPT.format(
-            name=txn.employee_name, level=txn.job_level, dept=txn.department,
+            name=txn.employee_name, level=job_level, dept=txn.department,
             amount_cad=txn.amount_cad, merchant=txn.merchant_name,
             util=util, viol=violations, flag=txn.policy_flag or "COMPLIANT",
             reason=txn.flag_reason or "None",
@@ -93,9 +107,9 @@ def build_dossier(db: Session, txn: Transaction) -> ApprovalDossier:
         reco_val = "REVIEW"
 
     return ApprovalDossier(
-        transaction=TransactionResponse.model_validate(txn),
-        employee=EmployeeResponse.model_validate(emp),
-        history=[TransactionResponse.model_validate(t) for t in history[:10]],
+        transaction=txn,
+        employee=emp,
+        history=history[:10],
         budget_utilization=round(util, 4),
         month_spend_cad=round(month_spend, 2),
         policy_violations_30d=violations,
@@ -105,3 +119,9 @@ def build_dossier(db: Session, txn: Transaction) -> ApprovalDossier:
         mitigating_factors=reco["mitigating_factors"],
         risk_score=txn.ai_risk_score or 0,
     )
+
+
+def build_dossier(db: Session, txn: Transaction) -> ApprovalDossier:
+    data = prepare_dossier_data(db, txn)
+    return build_dossier_from_data(data)
+

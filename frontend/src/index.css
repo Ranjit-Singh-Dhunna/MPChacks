@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html,
@@ -14,38 +14,60 @@ body,
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(124, 131, 255, 0.12), transparent),
-    radial-gradient(900px 500px at -10% 10%, rgba(45, 212, 191, 0.1), transparent),
-    #0a0e17;
-  color: #e6ebf5;
+  background: #f7f9fb;
+  color: #191c1e;
   font-family: "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-thumb {
-  background: #243049;
-  border-radius: 8px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #f7f9fb; 
+}
+::-webkit-scrollbar-thumb {
+  background: #c6c6cd; 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #76777d; 
+}
+
+.border-outline-variant {
+  border-color: #c6c6cd;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+
+.ai-glow {
+  box-shadow: inset 0 0 40px rgba(111, 122, 229, 0.05);
+  border: 1px solid rgba(111, 122, 229, 0.2);
+}
+
+.ai-text-gradient {
+  background: linear-gradient(90deg, #316bf3, #6f7ae5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-ink-700/60 bg-ink-850/70 backdrop-blur-sm;
+    @apply rounded-xl border border-outline-variant bg-white shadow-sm;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors;
   }
   .btn-primary {
-    @apply btn bg-brim-500 text-ink-950 hover:bg-brim-400;
+    @apply btn bg-secondary text-white hover:bg-secondary-container;
   }
   .btn-ghost {
-    @apply btn border border-ink-600 text-slate-200 hover:bg-ink-800;
+    @apply btn border border-outline-variant text-on-surface-variant hover:bg-surface-container-high;
   }
 }

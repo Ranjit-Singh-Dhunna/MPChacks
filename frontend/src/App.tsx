@@ -1,12 +1,12 @@
 import { Route, Routes } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
 import { Dashboard } from "./pages/Dashboard";
-import { TalkToData } from "./pages/TalkToData";
 import { Violations } from "./pages/Violations";
 import { PreApprovals } from "./pages/PreApprovals";
 import { ExpenseReports } from "./pages/ExpenseReports";
 import { ReportDetail } from "./pages/ReportDetail";
 import { PolicyManager } from "./pages/PolicyManager";
+import { TalkToData } from "./pages/TalkToData";
 
 export default function App() {
   return (
@@ -23,3 +23,5 @@ export default function App() {
     </Layout>
   );
 }
+
+

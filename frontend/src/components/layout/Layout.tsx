@@ -1,57 +1,102 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 const NAV = [
-  { to: "/", label: "Dashboard", icon: "▦" },
-  { to: "/query", label: "Talk to Data", icon: "✦" },
-  { to: "/violations", label: "Violations", icon: "⚠" },
-  { to: "/approvals", label: "Pre-Approvals", icon: "✓" },
-  { to: "/reports", label: "Expense Reports", icon: "▤" },
-  { to: "/policy", label: "Policy Manager", icon: "§" },
+  { to: "/", label: "Dashboard", icon: "grid_view" },
+  { to: "/violations", label: "Compliance", icon: "shield" },
+  { to: "/approvals", label: "Approvals", icon: "fact_check" },
+  { to: "/reports", label: "Reports", icon: "article" },
+  { to: "/policy", label: "Policy Settings", icon: "settings" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const isDashboardPage = location.pathname === "/";
+
   return (
-    <div className="flex min-h-screen">
-      <aside className="fixed inset-y-0 left-0 flex w-60 flex-col border-r border-ink-700/60 bg-ink-900/70 px-4 py-6 backdrop-blur">
-        <div className="flex items-center gap-2 px-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brim-500 text-lg font-black text-ink-950">
+    <div className="flex min-h-screen text-on-background bg-background">
+      <aside className="fixed inset-y-0 left-0 flex w-60 flex-col border-r border-outline-variant bg-surface-container-low px-4 py-6 z-20">
+        <div className="flex items-center gap-3 px-2 mb-6">
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-primary font-bold text-on-primary">
             B
           </div>
           <div>
-            <div className="text-sm font-bold leading-tight">Brim</div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-500">
+            <div className="text-md font-black tracking-tight text-primary">Brim AI</div>
+            <div className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant">
               Expense Intelligence
             </div>
           </div>
         </div>
 
-        <nav className="mt-8 flex flex-col gap-1">
+        {!isDashboardPage && (
+          <NavLink
+            to="/query"
+            className="flex items-center justify-between gap-2 rounded-lg bg-secondary hover:opacity-90 px-3 py-2.5 mb-4 text-sm font-semibold text-white shadow-sm transition-all"
+          >
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+              Talk to Data
+            </div>
+            <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[9px] text-white border border-white/20">
+              ⌘ K
+            </span>
+          </NavLink>
+        )}
+
+        <nav className="flex flex-col gap-1">
           {NAV.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
               end={n.to === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
                   isActive
-                    ? "bg-brim-500/15 text-brim-400"
-                    : "text-slate-400 hover:bg-ink-800 hover:text-slate-200"
+                    ? "bg-secondary text-white font-bold shadow-sm"
+                    : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
                 }`
               }
             >
-              <span className="w-4 text-center opacity-80">{n.icon}</span>
+              <span className="material-symbols-outlined text-[20px]">{n.icon}</span>
               {n.label}
             </NavLink>
           ))}
         </nav>
 
-        <div className="mt-auto rounded-xl border border-ink-700/60 bg-ink-850/60 p-3 text-[11px] leading-relaxed text-slate-500">
-          <span className="font-semibold text-brim-400">Deterministic-first.</span>{" "}
-          ~85% of checks run in Python; AI sees only flagged anomalies.
+        <div className="mt-auto flex flex-col gap-4">
+          {isDashboardPage && (
+            <NavLink
+              to="/query"
+              className="flex items-center justify-center gap-2 rounded-lg bg-secondary hover:opacity-90 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px]">mic</span>
+              Talk to Data
+            </NavLink>
+          )}
+
+
+
+          <div className="flex flex-col gap-1 px-2 border-t border-outline-variant pt-4">
+            <a
+              href="#help"
+              className="flex items-center gap-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">help_outline</span>
+              Help
+            </a>
+            <a
+              href="#logout"
+              className="flex items-center gap-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">logout</span>
+              Logout
+            </a>
+          </div>
         </div>
       </aside>
 
-      <main className="ml-60 flex-1 px-8 py-7">{children}</main>
+      <main className="ml-60 flex-grow bg-surface-bright min-h-screen relative">{children}</main>
     </div>
   );
 }
+
+
