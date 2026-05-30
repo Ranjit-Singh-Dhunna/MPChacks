@@ -9,7 +9,7 @@ import time
 
 from config import settings
 
-_MODEL_NAME = "gemini-1.5-flash"
+_MODEL_NAME = "gemini-3.1-flash-lite"
 
 
 class GeminiClient:
