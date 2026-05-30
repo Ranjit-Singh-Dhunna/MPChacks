@@ -1,0 +1,19 @@
+{
+  "5541": {"description": "Service Stations", "category": "Fuel"},
+  "5172": {"description": "Petroleum & Petroleum Products", "category": "Fuel"},
+  "5812": {"description": "Eating Places & Restaurants", "category": "Meals"},
+  "5814": {"description": "Fast Food Restaurants", "category": "Meals"},
+  "7011": {"description": "Hotels, Motels & Resorts", "category": "Lodging"},
+  "5111": {"description": "Stationery & Office Supplies", "category": "Office Supplies"},
+  "5943": {"description": "Stationery & Writing Supplies", "category": "Office Supplies"},
+  "7523": {"description": "Parking Lots & Garages", "category": "Parking & Tolls"},
+  "4131": {"description": "Bus Lines / Tolls", "category": "Parking & Tolls"},
+  "7531": {"description": "Auto Body Repair Shops", "category": "Vehicle Repair"},
+  "7538": {"description": "Automotive Service Shops", "category": "Vehicle Repair"},
+  "5734": {"description": "Computer Software Stores", "category": "Software"},
+  "4814": {"description": "Telecom Services", "category": "Software"},
+  "7995": {"description": "Betting / Gambling", "category": "Gambling"},
+  "7993": {"description": "Gaming Devices", "category": "Gambling"},
+  "5300": {"description": "Wholesale Clubs", "category": "Supplies"},
+  "5045": {"description": "Computers & Peripherals", "category": "Equipment"}
+}

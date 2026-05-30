@@ -1,0 +1,92 @@
+[
+  {
+    "employee_id": "EMP001",
+    "transaction_code": "TXC-001",
+    "name": "Olivia Reyes",
+    "department": "Executive",
+    "manager_id": null,
+    "job_level": 6,
+    "monthly_budget": 50000,
+    "email": "olivia.reyes@brimsmb.example"
+  },
+  {
+    "employee_id": "EMP002",
+    "transaction_code": "TXC-002",
+    "name": "Priya Nair",
+    "department": "Finance",
+    "manager_id": "EMP001",
+    "job_level": 5,
+    "monthly_budget": 20000,
+    "email": "priya.nair@brimsmb.example"
+  },
+  {
+    "employee_id": "EMP003",
+    "transaction_code": "TXC-003",
+    "name": "Marcus Webb",
+    "department": "Operations",
+    "manager_id": "EMP001",
+    "job_level": 5,
+    "monthly_budget": 20000,
+    "email": "marcus.webb@brimsmb.example"
+  },
+  {
+    "employee_id": "EMP004",
+    "transaction_code": "TXC-004",
+    "name": "Alice Chen",
+    "department": "Finance",
+    "manager_id": "EMP002",
+    "job_level": 4,
+    "monthly_budget": 8000,
+    "email": "alice.chen@brimsmb.example"
+  },
+  {
+    "employee_id": "EMP005",
+    "transaction_code": "TXC-005",
+    "name": "Dana Park",
+    "department": "Finance",
+    "manager_id": "EMP002",
+    "job_level": 3,
+    "monthly_budget": 3000,
+    "email": "dana.park@brimsmb.example"
+  },
+  {
+    "employee_id": "EMP006",
+    "transaction_code": "TXC-006",
+    "name": "Bob Kumar",
+    "department": "Finance",
+    "manager_id": "EMP004",
+    "job_level": 2,
+    "monthly_budget": 1500,
+    "email": "bob.kumar@brimsmb.example"
+  },
+  {
+    "employee_id": "EMP007",
+    "transaction_code": "TXC-007",
+    "name": "Carol White",
+    "department": "Finance",
+    "manager_id": "EMP004",
+    "job_level": 2,
+    "monthly_budget": 1500,
+    "email": "carol.white@brimsmb.example"
+  },
+  {
+    "employee_id": "EMP008",
+    "transaction_code": "TXC-008",
+    "name": "Eric Tran",
+    "department": "Operations",
+    "manager_id": "EMP003",
+    "job_level": 4,
+    "monthly_budget": 8000,
+    "email": "eric.tran@brimsmb.example"
+  },
+  {
+    "employee_id": "EMP009",
+    "transaction_code": "TXC-009",
+    "name": "Grace Lee",
+    "department": "Operations",
+    "manager_id": "EMP008",
+    "job_level": 3,
+    "monthly_budget": 3000,
+    "email": "grace.lee@brimsmb.example"
+  }
+]
