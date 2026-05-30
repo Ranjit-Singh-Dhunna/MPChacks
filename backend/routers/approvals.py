@@ -4,7 +4,7 @@ import asyncio
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from ai.dossier import build_dossier
+from ai.dossier import build_dossier, prepare_dossier_data, build_dossier_from_data
 from database import get_db
 from models import Transaction
 from schemas import ApprovalDossier, ApprovalList, DecisionRequest, DecisionResult
@@ -29,11 +29,15 @@ def _pending_query(db: Session):
 @router.get("/approvals", response_model=ApprovalList)
 async def list_approvals(db: Session = Depends(get_db), limit: int = 15):
     txns = _pending_query(db).limit(limit).all()
+    # Prepare all data sequentially on the main thread (uses DB session safely)
+    prepped_data = [prepare_dossier_data(db, t) for t in txns]
+    # Call the Gemini client/reco generation in parallel threads safely
     dossiers = await asyncio.gather(
-        *[asyncio.to_thread(build_dossier, db, t) for t in txns]
-    ) if txns else []
+        *[asyncio.to_thread(build_dossier_from_data, data) for data in prepped_data]
+    ) if prepped_data else []
     total = _pending_query(db).count()
     return ApprovalList(approvals=list(dossiers), total=total)
+
 
 
 @router.get("/approvals/{transaction_id}", response_model=ApprovalDossier)
