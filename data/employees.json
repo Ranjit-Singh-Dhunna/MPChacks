@@ -6,7 +6,7 @@
     "department": "Executive",
     "manager_id": null,
     "job_level": 6,
-    "monthly_budget": 50000,
+    "monthly_budget": 80000,
     "email": "olivia.reyes@brimsmb.example"
   },
   {
@@ -16,7 +16,7 @@
     "department": "Finance",
     "manager_id": "EMP001",
     "job_level": 5,
-    "monthly_budget": 20000,
+    "monthly_budget": 40000,
     "email": "priya.nair@brimsmb.example"
   },
   {
@@ -26,7 +26,7 @@
     "department": "Operations",
     "manager_id": "EMP001",
     "job_level": 5,
-    "monthly_budget": 20000,
+    "monthly_budget": 40000,
     "email": "marcus.webb@brimsmb.example"
   },
   {
@@ -36,7 +36,7 @@
     "department": "Finance",
     "manager_id": "EMP002",
     "job_level": 4,
-    "monthly_budget": 8000,
+    "monthly_budget": 20000,
     "email": "alice.chen@brimsmb.example"
   },
   {
@@ -46,7 +46,7 @@
     "department": "Finance",
     "manager_id": "EMP002",
     "job_level": 3,
-    "monthly_budget": 3000,
+    "monthly_budget": 14000,
     "email": "dana.park@brimsmb.example"
   },
   {
@@ -56,7 +56,7 @@
     "department": "Finance",
     "manager_id": "EMP004",
     "job_level": 2,
-    "monthly_budget": 1500,
+    "monthly_budget": 7000,
     "email": "bob.kumar@brimsmb.example"
   },
   {
@@ -66,7 +66,7 @@
     "department": "Finance",
     "manager_id": "EMP004",
     "job_level": 2,
-    "monthly_budget": 1500,
+    "monthly_budget": 7000,
     "email": "carol.white@brimsmb.example"
   },
   {
@@ -76,7 +76,7 @@
     "department": "Operations",
     "manager_id": "EMP003",
     "job_level": 4,
-    "monthly_budget": 8000,
+    "monthly_budget": 20000,
     "email": "eric.tran@brimsmb.example"
   },
   {
@@ -86,7 +86,7 @@
     "department": "Operations",
     "manager_id": "EMP008",
     "job_level": 3,
-    "monthly_budget": 3000,
+    "monthly_budget": 14000,
     "email": "grace.lee@brimsmb.example"
   }
 ]

@@ -31,7 +31,8 @@ SPAN_DAYS = (DATE_END - DATE_START).days
 # 1. Employee hierarchy (9 people)
 # --------------------------------------------------------------------------- #
 # job_level: L6 CEO ... L1 driver.  monthly_budget in CAD.
-BUDGET_BY_LEVEL = {6: 50000, 5: 20000, 4: 8000, 3: 3000, 2: 1500, 1: 500}
+# Budgets sized so normal monthly spend fits; only genuine overruns/fraud breach them.
+BUDGET_BY_LEVEL = {6: 80000, 5: 40000, 4: 20000, 3: 14000, 2: 7000, 1: 5000}
 
 EMPLOYEES = [
     # employee_id, code, name, department, manager_id, job_level
