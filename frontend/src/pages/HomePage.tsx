@@ -125,11 +125,11 @@ export function HomePage() {
       {/* NAVBAR */}
       <nav className="flex items-center justify-between px-8 py-4 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl gradient-hero flex items-center justify-center text-white font-black text-lg">
+          <div className="w-9 h-9 rounded-xl gradient-hero flex items-center justify-center text-white font-serif font-medium italic text-2xl">
             B
           </div>
-          <div>
-            <div className="text-base font-black text-white">Brim</div>
+          <div className="flex flex-col justify-center">
+            <div className="text-2xl font-serif font-medium italic text-white tracking-tight leading-none">Brim</div>
             <div className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">
               Expense Intelligence
             </div>
@@ -160,9 +160,9 @@ export function HomePage() {
             <span className="text-xs font-bold text-secondary">AI-Powered Expense Intelligence</span>
           </div>
 
-          <h1 className="text-5xl font-black tracking-tight text-white leading-tight mb-4">
+          <h1 className="text-6xl font-serif font-medium tracking-tight text-white leading-tight mb-4">
             Turn card data into<br />
-            <span className="ai-text-gradient">fraud intelligence</span>
+            <span className="ai-text-gradient italic">fraud intelligence</span>
           </h1>
           <p className="text-lg text-slate-300 font-medium mb-8 max-w-md">
             Upload your transactions CSV. Brim's hybrid AI pipeline detects fraud clusters, flags policy violations, and answers your finance questions — all in under 2 seconds.
@@ -178,7 +178,7 @@ export function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35 + i * 0.07 }}
               >
-                <div className="text-lg font-black stat-shimmer">{s.value}</div>
+                <div className="text-3xl font-serif font-normal stat-shimmer">{s.value}</div>
                 <div className="text-[10px] text-slate-400 mt-0.5 leading-tight">{s.label}</div>
               </motion.div>
             ))}

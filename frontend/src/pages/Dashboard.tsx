@@ -33,8 +33,8 @@ function KPICard({
       {...cardEnter(index)}
       onClick={() => to && nav(to)}
     >
-      <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{label}</div>
-      <div className="text-3xl font-black text-primary font-mono mt-2">{value}</div>
+      <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{label}</div>
+      <div className="text-4xl font-serif font-normal text-primary tracking-tight mt-2">{value}</div>
       <div className="text-xs text-on-surface-variant mt-1">{sub}</div>
       {to && (
         <div className="mt-3 flex items-center gap-1 text-[10px] text-secondary font-bold">
@@ -65,7 +65,7 @@ function AIEfficiencyCard({
 
       {/* Headline: actual AI calls */}
       <div className="flex items-end gap-2 mt-2">
-        <div className="text-3xl font-black font-mono"
+        <div className="text-4xl font-serif font-normal tracking-tight"
           style={isDark
             ? { color: "#FCD535" }
             : { background: "linear-gradient(90deg,#7c3aed,#0051d5)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
@@ -267,8 +267,8 @@ export function Dashboard() {
               >
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Spend Intelligence</div>
-                    <div className="text-base font-bold text-primary mt-0.5">Monthly Spend vs Budget</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Spend Intelligence</div>
+                    <div className="text-2xl font-serif font-medium text-primary mt-1 tracking-tight">Monthly Spend vs Budget</div>
                   </div>
                   <div className="flex items-center gap-3 text-[10px] text-on-surface-variant">
                     <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-secondary inline-block rounded" />Actual</span>
@@ -301,7 +301,7 @@ export function Dashboard() {
 
                 {/* Intelligence Breakdown */}
                 <div className="mt-5 pt-4 border-t border-outline-variant/50">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2.5">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5">
                     How decisions were made
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -335,7 +335,7 @@ export function Dashboard() {
                 {/* Anomaly feed */}
                 <div className="card p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Highest-Risk Flagged</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Highest-Risk Flagged</div>
                     <button
                       onClick={() => nav("/violations")}
                       className="text-[10px] text-secondary font-bold hover:underline flex items-center gap-0.5"
@@ -376,7 +376,7 @@ export function Dashboard() {
 
                 {/* Compliance gauge */}
                 <div className="card p-5">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-3">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-3">
                     System Compliance Rate
                   </div>
                   {(() => {
@@ -386,7 +386,7 @@ export function Dashboard() {
                     const revPct = total > 0 ? Math.round((data.reviews / total) * 100) : 6;
                     return (
                       <>
-                        <div className="text-3xl font-black font-mono text-primary">{compPct}%</div>
+                        <div className="text-5xl font-serif font-normal tracking-tight text-primary">{compPct}%</div>
                         <div className="mt-2 h-2.5 rounded-full overflow-hidden flex gap-0.5">
                           <div className="h-full rounded-l-full bg-green-500" style={{ width: `${compPct}%` }} />
                           <div className="h-full bg-error" style={{ width: `${violPct}%` }} />
@@ -411,7 +411,7 @@ export function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45 }}
             >
-              <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-4">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4">
                 Spend by Category
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

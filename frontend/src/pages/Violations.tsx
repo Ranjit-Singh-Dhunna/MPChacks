@@ -97,11 +97,11 @@ function SummaryMetric({
   const toneClass = tone === "danger" ? "text-error" : tone === "warning" ? "text-amber-700" : "text-primary";
   return (
     <div className="border-r border-outline-variant/50 px-5 py-4 last:border-r-0">
-      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
         <span className={`material-symbols-outlined text-[16px] ${toneClass}`}>{icon}</span>
         {label}
       </div>
-      <div className={`mt-2 text-2xl font-black tracking-tight ${toneClass}`}>{value}</div>
+      <div className={`mt-2 text-4xl font-serif font-normal tracking-tight ${toneClass}`}>{value}</div>
     </div>
   );
 }
@@ -420,7 +420,7 @@ export function Violations() {
         <div className="mx-auto flex max-w-[1500px] items-start justify-between gap-6">
           <div>
             <div className="section-label">Compliance Queue</div>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-primary">Actionable Risk Review</h1>
+            <h1 className="mt-1 text-3xl font-serif font-medium tracking-tight text-primary">Actionable Risk Review</h1>
             <p className="mt-1 text-sm text-on-surface-variant">
               Passive anomaly detection and direct policy exceptions in one finance-manager queue.
             </p>

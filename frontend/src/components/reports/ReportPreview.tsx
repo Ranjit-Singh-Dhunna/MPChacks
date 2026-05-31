@@ -23,20 +23,20 @@ export function ReportPreview({ report }: { report: any }) {
         {/* Header */}
         <div className="flex justify-between items-end border-b-2 border-[#1a1a1c] pb-6 mb-8">
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-tight">{report.report_title}</h1>
+            <h1 className="text-5xl font-serif font-medium tracking-tight text-[#1a1a1c]">{report.report_title}</h1>
             <div className="text-sm font-semibold text-gray-500 mt-2">
               Generated {format(new Date(), "MMMM d, yyyy")}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-sm font-black uppercase tracking-wider text-gray-500">Employee / Department</div>
-            <div className="text-xl font-bold">{report.employee_name}</div>
+            <div className="text-sm font-bold uppercase tracking-wider text-gray-500">Employee / Department</div>
+            <div className="text-xl font-serif font-medium">{report.employee_name}</div>
           </div>
         </div>
 
         {/* Executive Summary */}
         <div className="mb-10">
-          <div className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Executive Summary</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Executive Summary</div>
           <p className="text-sm font-medium leading-relaxed text-gray-800 bg-gray-50 p-4 border-l-4 border-primary/40 rounded-r-lg">
             {report.executive_summary}
           </p>
@@ -45,12 +45,12 @@ export function ReportPreview({ report }: { report: any }) {
         {/* Total Spend Highlights */}
         <div className="flex justify-between items-center mb-10 bg-gray-50 p-6 rounded-xl border border-gray-100">
           <div>
-            <div className="text-xs font-black uppercase tracking-widest text-gray-400">Total Spend</div>
-            <div className="text-3xl font-black tracking-tight text-[#1a1a1c]">${report.total_spend.toLocaleString()}</div>
+            <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Total Spend</div>
+            <div className="text-4xl font-serif font-normal tracking-tight text-[#1a1a1c]">${report.total_spend.toLocaleString()}</div>
           </div>
           <div className="text-right">
-            <div className="text-xs font-black uppercase tracking-widest text-gray-400">Transaction Count</div>
-            <div className="text-3xl font-black tracking-tight text-[#1a1a1c]">
+            <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Transaction Count</div>
+            <div className="text-4xl font-serif font-normal tracking-tight text-[#1a1a1c]">
               {report.groups.reduce((acc: number, g: any) => acc + g.transactions.length, 0)}
             </div>
           </div>

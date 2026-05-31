@@ -44,20 +44,7 @@ export function ExpenseReports() {
       {/* LEFT PANEL: AI Chat (Light Theme) */}
       <div className="w-[450px] shrink-0 border-r border-slate-200 bg-white flex flex-col p-6 gap-6 relative z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         
-        {/* Header */}
-        <div className="relative">
-          <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50/50 border border-blue-100/50 rounded-2xl p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20">
-                <span className="material-symbols-outlined text-white text-[18px]">auto_awesome</span>
-              </div>
-              <h1 className="text-xl font-black text-slate-800 tracking-tight">AI Reporter</h1>
-            </div>
-            <p className="text-[13px] text-slate-600 font-medium leading-relaxed">
-              Describe the data you need analyzed. Brim AI will aggregate, check policies, and instantly draft a CFO-ready document.
-            </p>
-          </div>
-        </div>
+
 
         {/* Suggestions */}
         <div className="animate-fade-in">
@@ -151,7 +138,7 @@ export function ExpenseReports() {
             <div className="w-24 h-24 rounded-full bg-white border border-slate-200 flex items-center justify-center mb-6 shadow-xl shadow-slate-200/50">
               <span className="material-symbols-outlined text-5xl text-blue-600/60">description</span>
             </div>
-            <div className="text-2xl font-black text-slate-800 tracking-tight mb-2">Ready to Generate</div>
+            <div className="text-3xl font-serif font-medium text-slate-800 tracking-tight mb-2">Ready to Generate</div>
             <p className="text-sm font-medium text-slate-500 max-w-sm">
               Use the AI assistant on the left to compile transactions, flag violations, and build a downloadable PDF report.
             </p>

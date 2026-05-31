@@ -31,7 +31,7 @@ export function PreApprovals() {
             </div>
             
             <div className="text-right">
-              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant bg-surface-container px-2 py-0.5 rounded mr-2">Reviewer</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant bg-surface-container px-2 py-0.5 rounded mr-2">Reviewer</span>
               <span className="text-xs font-bold text-primary">David, Department Approver</span>
             </div>
           </div>
@@ -60,8 +60,8 @@ export function PreApprovals() {
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-[10px] font-black text-on-surface-variant uppercase tracking-wider">Requested Amount</div>
-                <div className="text-3xl font-black text-primary tracking-tight mt-0.5">$2,450.00</div>
+                <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Requested Amount</div>
+                <div className="text-4xl font-serif font-normal text-primary tracking-tight mt-1">$2,450.00</div>
               </div>
             </div>
 
@@ -73,7 +73,7 @@ export function PreApprovals() {
                 
                 {/* Request Details */}
                 <div>
-                  <h3 className="text-[10px] font-black text-on-surface-variant uppercase tracking-wider mb-3">Request Details</h3>
+                  <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-3">Request Details</h3>
                   <div className="space-y-3">
                     <div>
                       <div className="text-[10px] text-on-surface-variant font-semibold uppercase">Purpose</div>
@@ -97,7 +97,7 @@ export function PreApprovals() {
 
                 {/* Contextual Data */}
                 <div>
-                  <h3 className="text-[10px] font-black text-on-surface-variant uppercase tracking-wider mb-3">Contextual Data</h3>
+                  <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-3">Contextual Data</h3>
                   <div className="space-y-3">
                     {/* Adherence card */}
                     <div className="bg-white border border-outline-variant/60 rounded-xl p-3 flex justify-between items-center shadow-sm">
@@ -113,7 +113,7 @@ export function PreApprovals() {
                     <div className="bg-white border border-outline-variant/60 rounded-xl p-3 shadow-sm">
                       <div className="flex justify-between items-center">
                         <span className="text-[9px] text-on-surface-variant font-bold uppercase">Marketing Budget</span>
-                        <span className="text-[9px] text-secondary font-black uppercase">On Track</span>
+                        <span className="text-[9px] text-secondary font-bold uppercase">On Track</span>
                       </div>
                       <div className="text-xs font-bold text-primary mt-0.5">Remaining: $12,400</div>
                       <div className="w-full bg-surface-container h-2 rounded-full mt-2 overflow-hidden border border-outline-variant/40">
@@ -135,7 +135,7 @@ export function PreApprovals() {
                       <span className="material-symbols-outlined text-[16px]">verified</span>
                     </span>
                     <div className="flex-1">
-                      <div className="flex items-center gap-1.5 text-xs font-black text-secondary uppercase tracking-wider">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-secondary uppercase tracking-wider">
                         AI Recommendation: APPROVE
                         <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
                       </div>
@@ -159,11 +159,11 @@ export function PreApprovals() {
 
                 {/* Extracted Line Items */}
                 <div className="space-y-3">
-                  <h3 className="text-[10px] font-black text-on-surface-variant uppercase tracking-wider">Extracted Line Items</h3>
+                  <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Extracted Line Items</h3>
                   <div className="border border-outline-variant/60 rounded-xl overflow-hidden shadow-sm bg-white">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-surface-container-low border-b border-outline-variant/50 text-[10px] font-black text-on-surface-variant uppercase tracking-wider">
+                        <tr className="bg-surface-container-low border-b border-outline-variant/50 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
                           <th className="px-4 py-3">Merchant</th>
                           <th className="px-4 py-3">Category</th>
                           <th className="px-4 py-3 text-right">Amount</th>
@@ -242,12 +242,12 @@ export function PreApprovals() {
       <div className="px-8 py-5 border-b border-outline-variant bg-white sticky top-0 z-10">
         <div className="flex justify-between items-start">
           <div>
-            <div className="flex items-center gap-1 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">
+            <div className="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
               Approvals
               <span className="material-symbols-outlined text-[12px] text-on-surface-variant">chevron_right</span>
               CFO Review
             </div>
-            <h1 className="text-xl font-bold text-primary mt-1 tracking-tight">West Coast Logistics Trip - March 2026</h1>
+            <h1 className="text-3xl font-serif font-medium text-primary mt-1 tracking-tight">West Coast Logistics Trip - March 2026</h1>
           </div>
           
           <div className="flex items-center gap-3">
@@ -272,12 +272,12 @@ export function PreApprovals() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-primary">CFO Summary</span>
-              <span className="bg-surface-container text-on-surface-variant text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-outline-variant/50">
+              <span className="bg-surface-container text-on-surface-variant text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-outline-variant/50">
                 AI Generated
               </span>
             </div>
             <p className="text-xs leading-relaxed text-on-surface-variant font-medium">
-              This report covers the 3-day logistics trip. 95% of spend is within policy. One outlier ($150 hotel surcharge) was flagged as <span className="bg-rose-50 text-error px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border border-rose-100 inline-flex items-center gap-0.5"><span className="material-symbols-outlined text-[12px]">warning</span>Medium</span> risk but contextually justified by last-minute rebooking due to weather.
+              This report covers the 3-day logistics trip. 95% of spend is within policy. One outlier ($150 hotel surcharge) was flagged as <span className="bg-rose-50 text-error px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-rose-100 inline-flex items-center gap-0.5"><span className="material-symbols-outlined text-[12px]">warning</span>Medium</span> risk but contextually justified by last-minute rebooking due to weather.
             </p>
             <div className="flex gap-2">
               <button className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant bg-surface-container-low border border-outline-variant/60 rounded-lg px-3 py-2 hover:bg-surface-container-high transition-colors">
@@ -296,7 +296,7 @@ export function PreApprovals() {
         <div className="border border-outline-variant/65 rounded-xl bg-white shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-outline-variant/50 flex justify-between items-center bg-white">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-black text-primary uppercase tracking-wider">Grouped View</h2>
+              <h2 className="text-xl font-serif font-medium text-primary uppercase tracking-wider">Grouped View</h2>
               <span className="bg-[#f0f2f5] text-on-surface-variant text-[10px] font-bold px-2.5 py-0.5 rounded border border-outline-variant/40">
                 TRP-2026-WC-092
               </span>
@@ -315,7 +315,7 @@ export function PreApprovals() {
 
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-surface-container-low border-b border-outline-variant/50 text-[10px] font-black text-on-surface-variant uppercase tracking-wider">
+              <tr className="bg-surface-container-low border-b border-outline-variant/50 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
                 <th className="px-6 py-3.5 w-12"><input type="checkbox" className="rounded border-outline-variant" /></th>
                 <th className="px-6 py-3.5">Date</th>
                 <th className="px-6 py-3.5">Merchant / Vendor</th>

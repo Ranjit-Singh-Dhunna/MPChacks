@@ -364,7 +364,7 @@ export function PolicyManager() {
       return (
         <>
           <label className="space-y-1.5">
-            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">MCC codes</span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">MCC codes</span>
             <input
               value={ruleDraft.mcc_codes}
               onChange={(event) => updateDraft({ mcc_codes: event.target.value })}
@@ -373,7 +373,7 @@ export function PolicyManager() {
             />
           </label>
           <label className="space-y-1.5">
-            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Reason</span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Reason</span>
             <input
               value={ruleDraft.description}
               onChange={(event) => updateDraft({ description: event.target.value })}
@@ -388,7 +388,7 @@ export function PolicyManager() {
     if (ruleDraft.rule_type === "RECEIPT_REQUIRED") {
       return (
         <label className="space-y-1.5">
-          <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Receipt threshold USD</span>
+          <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Receipt threshold USD</span>
           <input
             type="number"
             min="0"
@@ -404,7 +404,7 @@ export function PolicyManager() {
       return (
         <>
           <label className="space-y-1.5">
-            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Department</span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Department</span>
             <input
               value={ruleDraft.department}
               onChange={(event) => updateDraft({ department: event.target.value })}
@@ -413,7 +413,7 @@ export function PolicyManager() {
             />
           </label>
           <label className="space-y-1.5">
-            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Monthly cap CAD</span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Monthly cap CAD</span>
             <input
               type="number"
               min="0"
@@ -434,7 +434,7 @@ export function PolicyManager() {
     return (
       <>
         <label className="space-y-1.5">
-          <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">{amountLabel}</span>
+          <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">{amountLabel}</span>
           <input
             type="number"
             min="0"
@@ -445,7 +445,7 @@ export function PolicyManager() {
         </label>
         {ruleDraft.rule_type === "AMOUNT_LIMIT" && (
           <label className="space-y-1.5">
-            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">MCC filter</span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">MCC filter</span>
             <input
               value={ruleDraft.applies_to_mcc}
               onChange={(event) => updateDraft({ applies_to_mcc: event.target.value })}
@@ -472,8 +472,8 @@ export function PolicyManager() {
       <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-outline-variant bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-outline-variant/60 px-5 py-4">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-secondary">Policy rule</div>
-            <h2 className="text-base font-black text-primary">{ruleDraft.policy_id ? "Edit rule" : "Add custom rule"}</h2>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-secondary">Policy rule</div>
+            <h2 className="text-xl font-serif font-medium text-primary">{ruleDraft.policy_id ? "Edit rule" : "Add custom rule"}</h2>
           </div>
           <button
             onClick={() => setRuleDraft(null)}
@@ -485,7 +485,7 @@ export function PolicyManager() {
 
         <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
           <label className="space-y-1.5 md:col-span-2">
-            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Rule name</span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Rule name</span>
             <input
               value={ruleDraft.rule_name}
               onChange={(event) => updateDraft({ rule_name: event.target.value })}
@@ -494,7 +494,7 @@ export function PolicyManager() {
           </label>
 
           <label className="space-y-1.5">
-            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Rule type</span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Rule type</span>
             {isEnforcedRuleType(ruleDraft.rule_type) ? (
               <select
                 value={ruleDraft.rule_type}
@@ -517,7 +517,7 @@ export function PolicyManager() {
           </label>
 
           <label className="space-y-1.5">
-            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Severity</span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Severity</span>
             <select
               value={ruleDraft.severity}
               onChange={(event) => updateDraft({ severity: event.target.value as Severity })}
@@ -534,7 +534,7 @@ export function PolicyManager() {
           {renderRuleFields()}
 
           <label className="space-y-1.5 md:col-span-2">
-            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Source text</span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Source text</span>
             <textarea
               value={ruleDraft.source_text}
               onChange={(event) => updateDraft({ source_text: event.target.value })}
@@ -588,11 +588,11 @@ export function PolicyManager() {
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-secondary">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-secondary">
                 Policy Extractor / {selectedPolicy.name}
                 <span className="material-symbols-outlined text-[13px] text-secondary">auto_awesome</span>
               </div>
-              <h1 className="mt-1 text-2xl font-black tracking-tight text-primary">Review Extracted Rules</h1>
+              <h1 className="mt-1 text-3xl font-serif font-medium tracking-tight text-primary">Review Extracted Rules</h1>
               <p className="mt-1 max-w-2xl text-xs text-on-surface-variant">
                 AI has processed `{selectedPolicy.fileName}` into structured rules. Review, edit, and publish the active rules below.
               </p>
@@ -644,11 +644,11 @@ export function PolicyManager() {
                         <span className="text-sm font-bold text-primary">
                           Rule {index + 1}: {policy.rule_name}
                         </span>
-                        <span className="rounded-md border border-outline-variant bg-[#f8f9fa] px-2 py-0.5 text-[10px] font-black text-on-surface-variant">
+                        <span className="rounded-md border border-outline-variant bg-[#f8f9fa] px-2 py-0.5 text-[10px] font-bold text-on-surface-variant">
                           {policy.severity}
                         </span>
                         {!isEnforcedRuleType(policy.rule_type) && (
-                          <span className="rounded-md border border-outline-variant bg-white px-2 py-0.5 text-[10px] font-black text-on-surface-variant">
+                          <span className="rounded-md border border-outline-variant bg-white px-2 py-0.5 text-[10px] font-bold text-on-surface-variant">
                             REVIEW
                           </span>
                         )}
@@ -686,7 +686,7 @@ export function PolicyManager() {
 
                 <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
                       Condition
                     </label>
                     <input
@@ -698,7 +698,7 @@ export function PolicyManager() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
                       Constraint
                     </label>
                     <input
@@ -740,11 +740,11 @@ export function PolicyManager() {
       <div className="flex min-h-[95vh] flex-col bg-background text-on-background">
         <div className="sticky top-0 z-10 border-b border-outline-variant bg-surface px-8 py-6">
           <div>
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-secondary">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-secondary">
               Compliance Engine / Policy Rulesets
               <span className="material-symbols-outlined text-[13px] text-secondary">auto_awesome</span>
             </div>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-primary">Policy Documents</h1>
+            <h1 className="mt-1 text-3xl font-serif font-medium tracking-tight text-primary">Policy Documents</h1>
             <p className="mt-1 block text-xs text-on-surface-variant">
               Manage corporate guidelines and track AI rule extraction from policy documents.
             </p>
@@ -788,11 +788,11 @@ export function PolicyManager() {
       <div className="sticky top-0 z-10 border-b border-outline-variant bg-surface px-8 py-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-secondary">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-secondary">
               Compliance Engine / Policy Rulesets
               <span className="material-symbols-outlined text-[13px] text-secondary">auto_awesome</span>
             </div>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-primary">Policy Documents</h1>
+            <h1 className="mt-1 text-3xl font-serif font-medium tracking-tight text-primary">Policy Documents</h1>
             <p className="mt-1 block text-xs text-on-surface-variant">
               Manage corporate guidelines and track AI rule extraction from policy documents. Select a document below to edit or verify its active rules.
             </p>

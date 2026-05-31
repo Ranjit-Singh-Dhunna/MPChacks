@@ -33,8 +33,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             B
           </div>
-          <div>
-            <div className="text-sm font-black tracking-tight" style={{ color: "var(--ink-primary)" }}>
+          <div className="flex flex-col">
+            <div className="text-2xl font-serif font-medium italic tracking-tight" style={{ color: "var(--ink-primary)" }}>
               Brim
             </div>
             <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-muted)" }}>

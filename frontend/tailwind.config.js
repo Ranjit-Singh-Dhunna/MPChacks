@@ -87,6 +87,7 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        serif: ["Playfair Display", "serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
         "data-mono": ["JetBrains Mono"],
         "label-caps": ["Inter"],
