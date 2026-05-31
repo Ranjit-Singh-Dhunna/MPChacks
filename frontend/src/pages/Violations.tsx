@@ -222,6 +222,7 @@ function CaseDetailPanel({
 
   const reasons = getPolicyReasons(detail);
   const anomaly = getAnomalyDescription(detail);
+  const uniqueReasons = reasons.filter(r => r !== anomaly);
 
   return (
     <aside className="border border-outline-variant/60 bg-white sticky top-6 h-[calc(100vh-48px)] overflow-y-auto custom-scrollbar-light">
@@ -236,44 +237,49 @@ function CaseDetailPanel({
         <p className="mt-3 text-sm leading-6 text-on-surface-variant">{detail.summary}</p>
       </div>
 
-      <div className="grid grid-cols-3 border-b border-outline-variant/50">
+      <div className="grid grid-cols-3 border-b border-outline-variant/50 bg-secondary text-white m-5 rounded-lg shadow-sm">
         <div className="p-4">
-          <div className="section-label">Exposure</div>
-          <div className="mt-1 font-mono text-lg font-black text-primary">{cadPrecise(detail.exposure_cad)}</div>
+          <div className="text-[10px] font-black uppercase tracking-wider text-white/70">Exposure</div>
+          <div className="mt-1 font-mono text-2xl font-black">{cadPrecise(detail.exposure_cad)}</div>
         </div>
-        <div className="p-4 border-x border-outline-variant/50">
-          <div className="section-label">Risk</div>
-          <div className="mt-1 text-lg font-black text-primary">{detail.risk_score}/100</div>
+        <div className="p-4 border-x border-white/20">
+          <div className="text-[10px] font-black uppercase tracking-wider text-white/70">Risk</div>
+          <div className="mt-1 text-2xl font-black">{detail.risk_score}/100</div>
         </div>
         <div className="p-4">
-          <div className="section-label">Action</div>
-          <div className="mt-1 text-sm font-bold text-primary">{detail.recommended_action}</div>
+          <div className="text-[10px] font-black uppercase tracking-wider text-white/70">Action</div>
+          <div className="mt-1 text-sm font-bold">{detail.recommended_action}</div>
         </div>
       </div>
 
-      <div className="space-y-5 p-5">
+      <div className="space-y-5 px-5 pb-5">
+        <section>
+          <h3 className="section-label">Related transactions</h3>
+          <div className="mt-3 max-h-[240px] overflow-auto custom-scrollbar-light rounded border border-outline-variant/50">
+            <TransactionTable transactions={detail.transactions} />
+          </div>
+        </section>
+
         <section>
           <h3 className="section-label">Why this was flagged</h3>
           <div className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant max-h-48 overflow-y-auto no-scrollbar">
-            {anomaly && <p>{anomaly}</p>}
-            {reasons.length > 0 && (
-              <ul className="space-y-2">
-                {reasons.slice(0, 5).map((reason) => (
+            {anomaly && (
+              <div className="flex gap-2">
+                <span className="material-symbols-outlined mt-0.5 text-[16px] text-blue-600">info</span>
+                <p>{anomaly}</p>
+              </div>
+            )}
+            {uniqueReasons.length > 0 && (
+              <ul className="space-y-2 mt-2">
+                {uniqueReasons.slice(0, 5).map((reason) => (
                   <li key={reason} className="flex gap-2">
-                    <span className="material-symbols-outlined mt-0.5 text-[16px] text-error">warning</span>
+                    <span className="material-symbols-outlined mt-0.5 text-[16px] text-blue-600">info</span>
                     <span>{reason}</span>
                   </li>
                 ))}
               </ul>
             )}
-            {!anomaly && reasons.length === 0 && <p>No detailed evidence was recorded for this case.</p>}
-          </div>
-        </section>
-
-        <section>
-          <h3 className="section-label">Related transactions</h3>
-          <div className="mt-3 max-h-[240px] overflow-auto custom-scrollbar-light">
-            <TransactionTable transactions={detail.transactions} />
+            {!anomaly && uniqueReasons.length === 0 && <p>No detailed evidence was recorded for this case.</p>}
           </div>
         </section>
 
