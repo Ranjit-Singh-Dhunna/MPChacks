@@ -28,6 +28,20 @@ def _case_query(db: Session):
     return db.query(ComplianceCase)
 
 
+def _policy_case_transaction_ids(db: Session) -> list[str]:
+    ids: set[str] = set()
+    cases = (
+        db.query(ComplianceCase)
+        .filter(ComplianceCase.case_type.in_(["POLICY", "MIXED"]))
+        .all()
+    )
+    for case in cases:
+        evidence = case.evidence or {}
+        if evidence.get("policy_reasons") or evidence.get("policy_bucket"):
+            ids.update(case.related_transaction_ids or [])
+    return sorted(ids)
+
+
 @router.get("/overview", response_model=ComplianceOverview)
 def overview(db: Session = Depends(get_db)):
     open_cases = _case_query(db).filter(ComplianceCase.status.in_(list(OPEN_STATUSES))).all()
@@ -134,13 +148,18 @@ def update_case(case_id: str, req: ComplianceCaseUpdate, db: Session = Depends(g
 def violations(
     db: Session = Depends(get_db),
     page: int = Query(1, ge=1),
-    size: int = Query(50, ge=1, le=200),
+    size: int = Query(50, ge=1, le=1000),
     flag: str | None = Query(None, pattern="^(VIOLATION|REVIEW)$"),
 ):
     q = db.query(Transaction).filter(Transaction.policy_flag.in_(["VIOLATION", "REVIEW"]))
     if flag:
         q = q.filter(Transaction.policy_flag == flag)
     total = q.count()
+    if total == 0 and not flag:
+        case_txn_ids = _policy_case_transaction_ids(db)
+        if case_txn_ids:
+            q = db.query(Transaction).filter(Transaction.transaction_id.in_(case_txn_ids))
+            total = q.count()
     rows = (
         q.order_by(Transaction.ai_risk_score.desc(), Transaction.transaction_date.desc())
         .offset((page - 1) * size)

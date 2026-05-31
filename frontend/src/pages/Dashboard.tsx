@@ -51,9 +51,7 @@ function AIEfficiencyCard({
 }: {
   aiRatio: number; clusters: number; txnCount: number; index: number; isDark: boolean;
 }) {
-  // Derive actual call count from ratio × total (ratio is tiny: ~0.002)
   const aiCalls = aiRatio > 0 ? Math.max(1, Math.round(aiRatio * txnCount)) : 0;
-  // For bar display use cluster count as proxy — more meaningful than 0.2%
   const clusterBarPct = clusters > 0 ? Math.max(8, Math.min(40, clusters * 4)) : 0;
   const rulesBarPct = 100;
 
@@ -72,17 +70,17 @@ function AIEfficiencyCard({
           {aiCalls > 0 ? aiCalls : clusters}
         </div>
         <div className="text-xs text-on-surface-variant mb-1">
-          {aiCalls > 0 ? "Gemini calls" : "fraud clusters"}
+          {aiCalls > 0 ? "AI calls" : "fraud clusters"}
         </div>
       </div>
       <div className="text-[10px] text-on-surface-variant/70 mb-3">
         {aiCalls > 0
-          ? `on CRITICAL/HIGH clusters · ${txnCount.toLocaleString()} txns total`
-          : `${clusters} patterns detected · AI key inactive`}
+          ? `reserved for ambiguous cases; ${txnCount.toLocaleString()} txns total`
+          : `${clusters} patterns explained by deterministic evidence`}
       </div>
 
       <div className="space-y-2">
-        {/* Rules bar — always full */}
+        {/* Rules bar is always full because every transaction enters deterministic checks. */}
         <div>
           <div className="flex justify-between text-[10px] font-semibold mb-1">
             <span className="flex items-center gap-1 text-on-surface-variant">
@@ -101,15 +99,15 @@ function AIEfficiencyCard({
           </div>
         </div>
 
-        {/* Gemini bar — sized by cluster count, always visible when clusters > 0 */}
+        {/* Edge-case bar is sized by cluster count, visible when patterns exist. */}
         <div>
           <div className="flex justify-between text-[10px] font-semibold mb-1">
             <span className="flex items-center gap-1 text-secondary">
               <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
-              Gemini AI
+              Edge-case AI
             </span>
             <span className="font-mono text-secondary">
-              {aiCalls > 0 ? `${aiCalls} calls` : clusters > 0 ? `${clusters} clusters` : "—"}
+              {aiCalls > 0 ? `${aiCalls} calls` : clusters > 0 ? "0 calls" : "none"}
             </span>
           </div>
           <div className="h-2 bg-surface-container-high rounded-full overflow-hidden">
@@ -181,14 +179,7 @@ export function Dashboard() {
 
   const chartData = data?.top_categories ? buildChartData(data.top_categories) : [];
   const empty = !loading && data && data.transaction_count === 0;
-  // Use backend-reported ratio; if 0 but clusters exist (no Gemini key), show 15% demo floor
-  const aiRatio = data
-    ? data.ai_call_ratio > 0
-      ? data.ai_call_ratio
-      : data.fraud_clusters > 0
-        ? 0.15
-        : 0
-    : 0;
+  const aiRatio = data?.ai_call_ratio ?? 0;
   const rulePct = Math.round((1 - aiRatio) * 100);
   const aiPct = Math.round(aiRatio * 100);
 
