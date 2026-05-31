@@ -34,11 +34,21 @@ export function TalkToData() {
   const [mode, setMode] = useState<Mode>("text");
 
   // ── ElevenLabs Voice State ──
-  const [agentId, setAgentId] = useState(() => localStorage.getItem("elevenlabs_agent_id") || "");
+  const DEFAULT_AGENT_ID = "agent_3501ksy7yzr6edq839nstamc165p";
+  const [agentId, setAgentId] = useState(() => {
+    // Always use the latest agent ID — clear stale localStorage if outdated
+    const stored = localStorage.getItem("elevenlabs_agent_id") || "";
+    if (!stored || stored !== DEFAULT_AGENT_ID) {
+      localStorage.setItem("elevenlabs_agent_id", DEFAULT_AGENT_ID);
+      return DEFAULT_AGENT_ID;
+    }
+    return stored;
+  });
   const [convStatus, setConvStatus] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
   const [lastToolCall, setLastToolCall] = useState("");
   const conversationRef = useRef<any>(null);
+  const voiceSessionId  = useRef<string>(`voice-${Date.now()}`);
 
   useEffect(() => {
     return () => { conversationRef.current?.endSession(); };
@@ -83,48 +93,79 @@ export function TalkToData() {
       alert("Please enter a valid ElevenLabs Agent ID.");
       return;
     }
+    // Fresh session ID for conversation history
+    voiceSessionId.current = `voice-${Date.now()}`;
     try {
       setConvStatus("connecting");
       setMessages([]);
       setLastToolCall("");
+      setResult(null);
+
+      // Request mic first — if denied this throws and we never open a socket
       await navigator.mediaDevices.getUserMedia({ audio: true });
+
       const conv = await Conversation.startSession({
         agentId: agentId.trim(),
-        onConnect: () => setConvStatus("connected"),
-        onDisconnect: () => setConvStatus("disconnected"),
+
+        onConnect: () => {
+          console.log("[ElevenLabs] Connected");
+          setConvStatus("connected");
+        },
+
+        onDisconnect: () => {
+          console.log("[ElevenLabs] Disconnected");
+          setConvStatus("disconnected");
+          conversationRef.current = null;
+        },
+
         onMessage: (msg: any) => {
-          if (msg.message && (msg.source === "user" || msg.source === "ai")) {
+          console.log("[ElevenLabs] message:", msg);
+          // source can be "user" | "ai" | "agent" depending on SDK version
+          const isUser = msg.source === "user";
+          const isAI   = msg.source === "ai" || msg.source === "agent" || msg.source === "assistant";
+          if (msg.message && (isUser || isAI)) {
             setMessages((prev) => [
               ...prev,
-              { role: msg.source === "user" ? "user" : "assistant", text: msg.message },
+              { role: isUser ? "user" : "assistant", text: msg.message },
             ]);
           }
         },
+
+        // ── Client tools ──────────────────────────────────────────────────────
+        // The tool name MUST exactly match what is configured in the ElevenLabs
+        // dashboard under Agent → Tools → Client Tools.
         clientTools: {
-          update_expense_chart: async (params: { query: string }) => {
-            const q = params?.query || "most expensive transactions";
-            setLastToolCall(`Processing: "${q}"`);
-            setLoading(true);
-            postQuery(q, false)
-              .then((res) => {
-                setResult(res);
-                setLastToolCall(`Chart updated: "${res.ui_config.title}" (${res.data.length} items)`);
-                setLoading(false);
-              })
-              .catch((err) => {
-                setLastToolCall(`Failed: ${err.message}`);
-                setLoading(false);
-              });
-            return "Updating the visual chart with the requested data now.";
+          update_expense_chart: async (params: any) => {
+            try {
+              const q = (params?.query as string) || "most expensive transactions";
+              console.log("[ElevenLabs] tool call: update_expense_chart, query:", q);
+              setLastToolCall(`Processing: "${q}"`);
+              setLoading(true);
+              const res = await postQuery(q, false, voiceSessionId.current);
+              setResult(res);
+              setLastToolCall(`✓ "${res.ui_config.title}" (${res.data.length} rows)`);
+              setLoading(false);
+              return `Chart updated with ${res.data.length} data points for: ${q}`;
+            } catch (toolErr: any) {
+              console.error("[ElevenLabs] tool error:", toolErr);
+              setLastToolCall(`✗ Query failed`);
+              setLoading(false);
+              // Return a string (not throw) so the SDK doesn't kill the session
+              return "I was unable to retrieve that data right now.";
+            }
           },
         },
+
         onError: (err: any) => {
-          console.error("ElevenLabs error:", err);
-          setConvStatus("disconnected");
+          console.error("[ElevenLabs] session error:", err);
+          // Don't set disconnected here — onDisconnect will fire if the session
+          // truly ends. Setting it here on non-fatal errors kills the UI early.
         },
       });
+
       conversationRef.current = conv;
     } catch (err: any) {
+      console.error("[ElevenLabs] startSession failed:", err);
       alert(`Could not connect: ${err.message || err}`);
       setConvStatus("disconnected");
     }

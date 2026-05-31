@@ -27,6 +27,9 @@ SAFE_GLOBALS = {
     "pd": pd,
     "len": len, "sum": sum, "round": round, "abs": abs,
     "min": min, "max": max, "sorted": sorted,
+    "str": str, "int": int, "float": float, "bool": bool,
+    "list": list, "dict": dict, "tuple": tuple,
+    "zip": zip, "enumerate": enumerate, "range": range,
 }
 
 COLUMNS_DESC = (
