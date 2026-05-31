@@ -57,17 +57,60 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
+/* Gradient utilities */
+.gradient-hero {
+  background: linear-gradient(135deg, #0051d5 0%, #6f7ae5 50%, #9c55f5 100%);
+}
+.gradient-danger {
+  background: linear-gradient(135deg, #ba1a1a 0%, #e05c5c 100%);
+}
+.gradient-success {
+  background: linear-gradient(135deg, #1e8c5a 0%, #34d399 100%);
+}
+
+/* Card hover lift + glow */
+.metric-card-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.metric-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px -8px rgba(0, 81, 213, 0.18);
+}
+
+/* Danger card glow on hover */
+.metric-card-danger:hover {
+  box-shadow: 0 8px 30px -8px rgba(186, 26, 26, 0.25);
+}
+
 @layer components {
   .card {
-    @apply rounded-xl border border-outline-variant bg-white shadow-sm;
+    @apply rounded-2xl border border-outline-variant bg-white shadow-sm;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors;
   }
   .btn-primary {
-    @apply btn bg-secondary text-white hover:bg-secondary-container;
+    @apply btn bg-secondary text-white hover:opacity-90;
   }
   .btn-ghost {
     @apply btn border border-outline-variant text-on-surface-variant hover:bg-surface-container-high;
+  }
+  .btn-danger {
+    @apply btn bg-error text-white hover:opacity-90;
+  }
+  .section-label {
+    @apply text-[10px] font-black uppercase tracking-widest text-on-surface-variant;
+  }
+  .severity-dot-critical {
+    @apply w-2 h-2 rounded-full bg-error animate-pulse;
+  }
+  .severity-dot-high {
+    @apply w-2 h-2 rounded-full bg-orange-500;
+  }
+  .severity-dot-medium {
+    @apply w-2 h-2 rounded-full bg-amber-400;
+  }
+  .severity-dot-low {
+    @apply w-2 h-2 rounded-full bg-gray-400;
   }
 }

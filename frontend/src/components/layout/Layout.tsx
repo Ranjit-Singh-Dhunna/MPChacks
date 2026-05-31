@@ -2,6 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: "grid_view" },
+  { to: "/query", label: "Talk to Data", icon: "psychology" },
   { to: "/violations", label: "Compliance", icon: "shield" },
   { to: "/approvals", label: "Approvals", icon: "fact_check" },
   { to: "/reports", label: "Reports", icon: "article" },
