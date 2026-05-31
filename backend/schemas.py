@@ -317,3 +317,30 @@ class FraudIntelligenceResponse(BaseModel):
     risk_distribution: dict[str, int]   # tier -> count
     total_detectors_run: int
     detection_patterns: list[str]       # unique pattern types found
+
+
+# ---- AI Report Generator ----
+class AIReportRequest(BaseModel):
+    query: str
+
+class ReportTransaction(BaseModel):
+    transaction_id: str
+    merchant_name: str
+    amount_usd: float
+    transaction_date: str
+    mcc_description: str
+    policy_flag: Optional[str] = None
+    flag_reason: Optional[str] = None
+
+class ReportGroup(BaseModel):
+    category: str
+    total_amount: float
+    transactions: list[ReportTransaction]
+
+class AIReportResponse(BaseModel):
+    report_title: str
+    employee_name: Optional[str] = None
+    date_range: str
+    total_spend: float
+    executive_summary: str
+    groups: list[ReportGroup]

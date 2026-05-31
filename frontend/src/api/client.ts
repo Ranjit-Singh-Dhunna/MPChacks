@@ -43,6 +43,11 @@ export const postQuery = (question: string, voice: boolean, session_id = "defaul
     .post<NLQueryResponse>("/query", { question, voice, session_id })
     .then((r) => r.data);
 
+export const generateAIReport = async (query: string): Promise<any> => {
+  const res = await api.post("/reports/ai-generate", { query });
+  return res.data;
+};
+
 export const getRules = () =>
   api.get<Policy[]>("/policy/rules").then((r) => r.data);
 

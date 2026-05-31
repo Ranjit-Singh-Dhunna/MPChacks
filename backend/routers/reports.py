@@ -13,7 +13,10 @@ from schemas import (
     ExpenseReportSummary,
     ReportApproveRequest,
     ReportGenerateRequest,
+    AIReportRequest,
+    AIReportResponse,
 )
+from ai.report_generator import generate_ai_report
 
 router = APIRouter(prefix="/api", tags=["reports"])
 
@@ -29,6 +32,12 @@ async def generate(req: ReportGenerateRequest, db: Session = Depends(get_db)):
     reports = await asyncio.to_thread(
         generate_reports, db, req.employee_id, req.start_date, req.end_date)
     return [ExpenseReportSummary.model_validate(r) for r in reports]
+
+
+@router.post("/reports/ai-generate", response_model=AIReportResponse)
+async def ai_generate(req: AIReportRequest, db: Session = Depends(get_db)):
+    # Offload the LLM parsing and DB fetching to a background thread
+    return await asyncio.to_thread(generate_ai_report, db, req.query)
 
 
 @router.get("/reports/{report_id}", response_model=ExpenseReportDetail)
