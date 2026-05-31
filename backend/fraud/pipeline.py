@@ -9,6 +9,7 @@ import pandas as pd
 from sqlalchemy.orm import Session
 
 from ai.gemini_client import gemini
+from compliance.cases import sync_compliance_cases
 from fraud.detectors import FraudFlag, run_all_detectors
 from ingestion.enricher import lookup_mcc_category
 from models import Employee, FraudCluster, Policy, Transaction
@@ -147,6 +148,8 @@ def run_fraud_pipeline(db: Session) -> dict:
                                                      cluster.recommended_action)
         db.add(cluster)
 
+    db.flush()
+    sync_compliance_cases(db)
     db.commit()
 
     total = len(txns)

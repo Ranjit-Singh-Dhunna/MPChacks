@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from database import SessionLocal, init_db
-from routers import approvals, ingest, policy, query, reports, transactions
+from routers import approvals, compliance, ingest, policy, query, reports, transactions
 from seed import seed_employees, seed_policies
 
 
@@ -37,7 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for r in (ingest, transactions, policy, query, approvals, reports):
+for r in (ingest, transactions, policy, query, approvals, reports, compliance):
     app.include_router(r.router)
 
 

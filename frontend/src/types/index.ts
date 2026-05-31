@@ -31,6 +31,53 @@ export interface TransactionPage {
   size: number;
 }
 
+export type ComplianceCaseStatus = "OPEN" | "ESCALATED" | "INFO_REQUESTED" | "REVIEWED" | "DISMISSED" | "RESOLVED";
+export type ComplianceCaseType = "ANOMALY" | "POLICY" | "MIXED";
+
+export interface ComplianceOverview {
+  open_cases: number;
+  critical_high_cases: number;
+  total_exposure_cad: number;
+  policy_violations: number;
+  policy_reviews: number;
+  total_cases: number;
+  last_scan_at: string | null;
+}
+
+export interface ComplianceCase {
+  case_id: string;
+  case_type: ComplianceCaseType;
+  status: ComplianceCaseStatus;
+  severity: Severity;
+  risk_score: number;
+  exposure_cad: number;
+  title: string;
+  summary: string;
+  recommended_action: string;
+  evidence: Record<string, unknown>;
+  related_transaction_ids: string[];
+  related_employee_names: string[];
+  created_at: string;
+  updated_at: string;
+  last_seen_at: string | null;
+  resolved_at: string | null;
+}
+
+export interface ComplianceCaseEvent {
+  event_id: number;
+  case_id: string;
+  action: string;
+  actor: string;
+  note: string | null;
+  snapshot: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface ComplianceCaseDetail extends ComplianceCase {
+  events: ComplianceCaseEvent[];
+  transactions: Transaction[];
+}
+
 export interface DashboardStats {
   total_spend_cad: number;
   transaction_count: number;
@@ -114,6 +161,8 @@ export interface ApprovalDossier {
   risk_factors: string[];
   mitigating_factors: string[];
   risk_score: number;
+  compliance_warning_count: number;
+  compliance_warnings: string[];
 }
 
 export interface ApprovalList {
