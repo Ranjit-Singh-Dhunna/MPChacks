@@ -131,6 +131,7 @@ class NLQueryResponse(BaseModel):
     ui_config: UIConfig
     summary: str
     audio_base64: Optional[str] = None
+    fallback_reason: Optional[str] = None
     used_fallback: bool = False
 
 

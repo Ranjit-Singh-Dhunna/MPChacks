@@ -4,6 +4,7 @@ Gemini is a logic-compiler here, never a calculator. It emits a single pandas ex
 which we execute in a locked-down namespace (no builtins, no import/os/sys/eval). Visual-only
 follow-ups reuse cached data and skip the DB + LLM entirely.
 """
+import logging
 import re
 
 import pandas as pd
@@ -12,6 +13,8 @@ from sqlalchemy.orm import Session
 from ai.gemini_client import gemini
 from models import Transaction
 from schemas import NLQueryResponse, UIConfig
+
+logger = logging.getLogger(__name__)
 
 BLOCKED_PATTERNS = [
     r"\bimport\b", r"\bos\b", r"\bsys\b", r"\beval\b", r"\bexec\b",
@@ -42,8 +45,8 @@ A pandas DataFrame `df` has columns:
 Return ONLY valid JSON:
 {{
   "pandas_expression": "<single pandas expression on df returning a DataFrame or scalar>",
-  "ui_config": {{"chart_type": "bar|line|pie|area|table", "x_axis": "<col or null>",
-                 "y_axis": "<col or null>", "title": "<title>", "color_key": "<col or null>"}},
+  "ui_config": {{"chart_type": "bar|line|pie|area|table", "x_axis": "<col or empty string>",
+                 "y_axis": "<col or empty string>", "title": "<title>", "color_key": "<col or empty string>"}},
   "summary": "<1-2 sentence plain-English answer>"
 }}
 
@@ -54,6 +57,29 @@ RULES:
 - For time series use ['label','value'] where label is a date/period string.
 - amounts are in CAD (amount_cad) unless the user asks for USD.
 """
+
+_PLAN_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "pandas_expression": {
+            "type": "string",
+            "description": "A single safe pandas expression using df.",
+        },
+        "ui_config": {
+            "type": "object",
+            "properties": {
+                "chart_type": {"type": "string", "enum": ["bar", "line", "pie", "area", "table"]},
+                "x_axis": {"type": "string"},
+                "y_axis": {"type": "string"},
+                "title": {"type": "string"},
+                "color_key": {"type": "string"},
+            },
+            "required": ["chart_type", "x_axis", "y_axis", "title", "color_key"],
+        },
+        "summary": {"type": "string"},
+    },
+    "required": ["pandas_expression", "ui_config", "summary"],
+}
 
 # very small in-process cache for conversational follow-ups
 _CACHE: dict[str, dict] = {}
@@ -85,26 +111,38 @@ def _result_to_records(result) -> list[dict]:
         for c in out.columns:
             if pd.api.types.is_datetime64_any_dtype(out[c]):
                 out[c] = out[c].astype(str)
+            else:
+                out[c] = out[c].map(_json_safe)
         return out.to_dict(orient="records")
     if isinstance(result, pd.Series):
-        return result.head(100).reset_index().rename(
+        out = result.head(100).reset_index().rename(
             columns={result.index.name or "index": "label", result.name or 0: "value"}
-        ).to_dict(orient="records")
+        )
+        for c in out.columns:
+            out[c] = out[c].map(_json_safe)
+        return out.to_dict(orient="records")
     return [{"label": "result", "value": _json_safe(result)}]
 
 
 def _json_safe(v):
+    if pd.isna(v):
+        return None
     try:
         if hasattr(v, "item"):
             return v.item()
     except Exception:  # noqa: BLE001
         pass
+    if isinstance(v, pd.Timestamp):
+        return v.isoformat()
+    if isinstance(v, pd.Period):
+        return str(v)
     return v
 
 
-def _fallback_response(question: str, db: Session) -> NLQueryResponse:
+def _fallback_response(question: str, db: Session, reason: str = "unknown") -> NLQueryResponse:
     """Deterministic default when Gemini is unavailable or returns bad JSON:
     spend by department (the most common ask)."""
+    logger.warning("NL query falling back reason=%s question=%r", reason, question)
     df = _load_df(db)
     if df.empty:
         data = []
@@ -118,26 +156,43 @@ def _fallback_response(question: str, db: Session) -> NLQueryResponse:
         data=data,
         ui_config=UIConfig(chart_type="bar", x_axis="label", y_axis="value",
                            title="Spend by Department (CAD)"),
-        summary="Showing total spend by department (AI unavailable — deterministic fallback).",
+        summary="Showing total spend by department (AI query unavailable - deterministic fallback).",
+        fallback_reason=reason,
         used_fallback=True,
     )
 
 
+def _normalize_ui_config(raw: dict | None) -> UIConfig:
+    ui = dict(raw or {})
+    for key in ("x_axis", "y_axis", "color_key"):
+        value = ui.get(key)
+        if value in ("", "null", "None", "none"):
+            ui[key] = None
+    return UIConfig(**ui)
+
+
 def run_query(db: Session, question: str, session_id: str = "default") -> NLQueryResponse:
     if not gemini.available:
-        return _fallback_response(question, db)
+        reason = getattr(gemini, "init_error", "") or "gemini_unavailable"
+        return _fallback_response(question, db, reason)
 
-    plan = gemini.call_json(_PROMPT.format(question=question, columns=COLUMNS_DESC))
+    plan = gemini.call_json(
+        _PROMPT.format(question=question, columns=COLUMNS_DESC),
+        response_schema=_PLAN_SCHEMA,
+    )
     if isinstance(plan, dict) and plan.get("_fallback"):
-        return _fallback_response(question, db)
+        return _fallback_response(question, db, f"gemini_call_failed:{plan.get('_reason', 'unknown')}")
+    if not isinstance(plan, dict):
+        return _fallback_response(question, db, f"gemini_returned_{type(plan).__name__}")
 
     try:
         expr = plan["pandas_expression"]
+        logger.info("NL query plan question=%r expr=%r ui=%r", question, expr, plan.get("ui_config"))
         _validate_expression(expr)
         df = _load_df(db)
         result = eval(expr, SAFE_GLOBALS, {"df": df})  # noqa: S307 — sandboxed namespace
         data = _result_to_records(result)
-        ui = UIConfig(**plan.get("ui_config", {}))
+        ui = _normalize_ui_config(plan.get("ui_config"))
         resp = NLQueryResponse(
             question=question, query_string=expr, data=data,
             ui_config=ui, summary=plan.get("summary", ""),
@@ -147,8 +202,9 @@ def run_query(db: Session, question: str, session_id: str = "default") -> NLQuer
         return resp
     except ValueError:
         raise  # safety rejection -> surfaced as HTTP 400 by the router
-    except Exception:  # noqa: BLE001 — bad expression etc. -> deterministic fallback
-        return _fallback_response(question, db)
+    except Exception as exc:  # noqa: BLE001 — bad expression etc. -> deterministic fallback
+        logger.exception("NL query execution failed question=%r plan=%r", question, plan)
+        return _fallback_response(question, db, f"plan_execution_failed:{type(exc).__name__}: {exc}")
 
 
 def restyle_cached(session_id: str, chart_type: str) -> NLQueryResponse | None:

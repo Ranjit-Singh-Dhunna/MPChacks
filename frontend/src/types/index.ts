@@ -126,6 +126,7 @@ export interface NLQueryResponse {
   ui_config: UIConfig;
   summary: string;
   audio_base64: string | null;
+  fallback_reason: string | null;
   used_fallback: boolean;
 }
 

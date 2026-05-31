@@ -14,9 +14,10 @@ interface Props {
   rowCount?: number;
   queryString?: string;
   usedFallback?: boolean;
+  fallbackReason?: string | null;
 }
 
-export function ChainOfTrust({ durationMs, rowCount, queryString, usedFallback }: Props) {
+export function ChainOfTrust({ durationMs, rowCount, queryString, usedFallback, fallbackReason }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   const steps: Step[] = [
@@ -29,6 +30,7 @@ export function ChainOfTrust({ durationMs, rowCount, queryString, usedFallback }
       ? {
           icon: "shield",
           label: "Deterministic engine resolved query — instant, auditable result",
+          detail: fallbackReason ? `Fallback reason: ${fallbackReason}` : undefined,
           type: "rule",
         }
       : {

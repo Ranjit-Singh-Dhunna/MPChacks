@@ -270,6 +270,7 @@ export function TalkToData() {
                       rowCount={result.data.length}
                       queryString={result.query_string}
                       usedFallback={result.used_fallback}
+                      fallbackReason={result.fallback_reason}
                     />
                     <div className="card p-6">
                       <div className="flex items-start justify-between mb-1 gap-3 flex-wrap">
@@ -289,7 +290,9 @@ export function TalkToData() {
                       {result.used_fallback && (
                         <div className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container-low px-3 py-1 mb-3">
                           <span className="material-symbols-outlined text-[12px] text-on-surface-variant">shield</span>
-                          <span className="text-[10px] font-bold text-on-surface-variant">Deterministic engine · instant result</span>
+                          <span className="text-[10px] font-bold text-on-surface-variant">
+                            Deterministic engine · {result.fallback_reason || "instant result"}
+                          </span>
                         </div>
                       )}
                       <SmartChart data={result.data} ui={result.ui_config} />
