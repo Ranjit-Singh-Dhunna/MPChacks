@@ -16,7 +16,7 @@ const SUGGESTIONS = [
   "Pending approvals by risk score",
 ];
 
-const CHART_TYPES = ["bar", "line", "area", "pie", "table"] as const;
+const CHART_TYPES = ["bar", "line", "area", "pie", "table", "map"] as const;
 
 interface HistoryEntry { question: string; summary: string; }
 

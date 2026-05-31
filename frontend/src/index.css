@@ -114,3 +114,25 @@ body {
     @apply w-2 h-2 rounded-full bg-gray-400;
   }
 }
+
+/* Dark landing page section */
+.dark-section {
+  background: linear-gradient(135deg, #050a14 0%, #0c1a2e 60%, #111827 100%);
+  color: #e6ebf5;
+}
+
+/* Upload drag-and-drop zone */
+.upload-zone {
+  border: 2px dashed rgba(0, 81, 213, 0.3);
+  transition: all 0.25s ease;
+}
+.upload-zone.drag-active {
+  border-color: #0051d5;
+  background: rgba(0, 81, 213, 0.06);
+  box-shadow: 0 0 40px rgba(0, 81, 213, 0.18);
+}
+
+/* Pipeline progress step states */
+.pipeline-step-done { color: #34d399; }
+.pipeline-step-active { color: #0051d5; }
+.pipeline-step-pending { color: #6b7280; }

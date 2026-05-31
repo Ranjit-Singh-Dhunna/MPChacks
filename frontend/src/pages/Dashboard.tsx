@@ -131,6 +131,13 @@ export function Dashboard() {
             <span className="text-xs text-on-surface-variant max-w-xs truncate">{msg}</span>
           )}
           <button
+            className="btn-ghost text-xs"
+            onClick={() => nav("/")}
+          >
+            <span className="material-symbols-outlined text-[15px]">upload_file</span>
+            Upload New
+          </button>
+          <button
             className="btn-primary text-xs"
             onClick={runPipeline}
             disabled={busy}

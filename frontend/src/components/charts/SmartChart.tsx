@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import {
   Area,
   AreaChart,
@@ -17,6 +18,11 @@ import {
 } from "recharts";
 import type { UIConfig } from "../../types";
 
+// Lazy-load MiniGlobe so Three.js doesn't bloat every page
+const MiniGlobe = lazy(() =>
+  import("../globe/MiniGlobe").then((m) => ({ default: m.MiniGlobe }))
+);
+
 const PALETTE = [
   "#2dd4bf", "#7c83ff", "#f59e0b", "#f43f5e", "#38bdf8",
   "#a78bfa", "#34d399", "#fb923c", "#e879f9", "#facc15",
@@ -28,9 +34,7 @@ function inferKeys(data: Row[], ui: UIConfig) {
   if (!data.length) return { x: "label", y: "value" };
   const keys = Object.keys(data[0]);
   const x = ui.x_axis && keys.includes(ui.x_axis) ? ui.x_axis : keys[0];
-  const numeric = keys.find(
-    (k) => k !== x && typeof data[0][k] === "number"
-  );
+  const numeric = keys.find((k) => k !== x && typeof data[0][k] === "number");
   const y = ui.y_axis && keys.includes(ui.y_axis) ? ui.y_axis : numeric || keys[1] || keys[0];
   return { x, y };
 }
@@ -59,12 +63,30 @@ export function SmartChart({ data, ui }: { data: Row[]; ui: UIConfig }) {
   }
   const { x, y } = inferKeys(data, ui);
 
+  // ── MAP VIEW ──
+  if ((ui as any).chart_type === "map") {
+    return (
+      <div className="flex justify-center items-center overflow-hidden rounded-2xl bg-[#050a14] py-2">
+        <Suspense
+          fallback={
+            <div className="h-72 flex items-center justify-center text-slate-500 text-sm">
+              Loading globe…
+            </div>
+          }
+        >
+          <MiniGlobe data={data as any} xKey={x} yKey={y} width={560} height={300} />
+        </Suspense>
+      </div>
+    );
+  }
+
+  // ── TABLE ──
   if (ui.chart_type === "table") {
     const keys = Object.keys(data[0]);
     return (
-      <div className="max-h-80 overflow-auto rounded-xl border border-ink-700">
+      <div className="max-h-80 overflow-auto rounded-xl border border-outline-variant/60">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-ink-800 text-left text-xs uppercase text-slate-400">
+          <thead className="sticky top-0 bg-surface-container-low text-left text-xs uppercase text-on-surface-variant">
             <tr>
               {keys.map((k) => (
                 <th key={k} className="px-3 py-2 font-semibold">{k}</th>
@@ -73,9 +95,9 @@ export function SmartChart({ data, ui }: { data: Row[]; ui: UIConfig }) {
           </thead>
           <tbody>
             {data.map((row, i) => (
-              <tr key={i} className="border-t border-ink-700/60">
+              <tr key={i} className="border-t border-outline-variant/40">
                 {keys.map((k) => (
-                  <td key={k} className="px-3 py-2 tabular-nums text-slate-200">
+                  <td key={k} className="px-3 py-2 tabular-nums text-on-background">
                     {String(row[k])}
                   </td>
                 ))}
@@ -87,6 +109,7 @@ export function SmartChart({ data, ui }: { data: Row[]; ui: UIConfig }) {
     );
   }
 
+  // ── RECHARTS ──
   return (
     <ResponsiveContainer width="100%" height={320}>
       {ui.chart_type === "pie" ? (

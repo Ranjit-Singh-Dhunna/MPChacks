@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 
 const NAV = [
-  { to: "/", label: "Dashboard", icon: "grid_view" },
+  { to: "/dashboard", label: "Dashboard", icon: "grid_view" },
   { to: "/query", label: "Talk to Data", icon: "psychology" },
   { to: "/violations", label: "Compliance", icon: "shield" },
   { to: "/approvals", label: "Approvals", icon: "fact_check" },
@@ -32,7 +32,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <NavLink
               key={n.to}
               to={n.to}
-              end={n.to === "/"}
+              end={n.to === "/dashboard"}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
                   isActive
