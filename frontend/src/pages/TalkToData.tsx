@@ -34,7 +34,7 @@ export function TalkToData() {
   const [mode, setMode] = useState<Mode>("text");
 
   // ── ElevenLabs Voice State ──
-  const DEFAULT_AGENT_ID = "agent_3501ksy7yzr6edq839nstamc165p";
+  const DEFAULT_AGENT_ID = "agent_7601ksz27t9betxaja7399qzp4hj";
   const [agentId, setAgentId] = useState(() => {
     // Always use the latest agent ID — clear stale localStorage if outdated
     const stored = localStorage.getItem("elevenlabs_agent_id") || "";

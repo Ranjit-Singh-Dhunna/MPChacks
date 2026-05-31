@@ -85,7 +85,7 @@ class GeminiClient:
             except Exception as exc:  # noqa: BLE001
                 last_err = f"{type(exc).__name__}: {exc}"
                 if "429" in last_err or "quota" in last_err.lower() or "rate" in last_err.lower():
-                    self._cooldown_until = time.monotonic() + 60.0
+                    self._cooldown_until = time.monotonic() + 5.0
                     break
             logger.warning(
                 "Gemini JSON call failed attempt=%s/%s model=%s reason=%s",
