@@ -129,7 +129,7 @@ export function HomePage() {
             B
           </div>
           <div className="flex flex-col justify-center">
-            <div className="text-2xl font-serif font-medium italic text-white tracking-tight leading-none">Brim</div>
+            <div className="text-2xl font-serif font-medium italic text-white tracking-tight leading-none">Aegis</div>
             <div className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">
               Expense Intelligence
             </div>
@@ -165,7 +165,7 @@ export function HomePage() {
             <span className="ai-text-gradient italic">fraud intelligence</span>
           </h1>
           <p className="text-lg text-slate-300 font-medium mb-8 max-w-md">
-            Upload your transactions CSV. Brim's hybrid AI pipeline detects fraud clusters, flags policy violations, and answers your finance questions — all in under 2 seconds.
+            Upload your transactions CSV. Aegis's hybrid AI pipeline detects fraud clusters, flags policy violations, and answers your finance questions — all in under 2 seconds.
           </p>
 
           {/* Stats row */}

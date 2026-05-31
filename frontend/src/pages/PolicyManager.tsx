@@ -221,8 +221,8 @@ export function PolicyManager() {
   const activePolicyCard = useMemo(
     () => ({
       id: "p_loaded_db",
-      name: "Brim Expense Policy",
-      fileName: "Brim_Expense_Policy.pdf",
+      name: "Aegis Expense Policy",
+      fileName: "Aegis_Expense_Policy.pdf",
       rulesCount: rules.length,
       uploadedAt: "Active Database Ruleset",
       uploadedBy: "Finance Manager",

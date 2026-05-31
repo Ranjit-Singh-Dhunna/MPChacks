@@ -331,7 +331,7 @@ export function PreApprovals() {
 
   /* ── Render ────────────────────────────────────────────────────────────── */
   return (
-    <div className="flex flex-col h-full bg-background text-on-background min-h-[95vh]">
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-background text-on-background">
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="px-8 py-4 border-b border-outline-variant bg-white sticky top-0 z-10">
         <div className="flex justify-between items-center">

@@ -27,15 +27,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       >
         {/* Wordmark */}
         <div className="flex items-center gap-3 px-2 mb-7">
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl font-black text-white text-base shrink-0"
-            style={{ background: "var(--accent)" }}
-          >
-            B
-          </div>
           <div className="flex flex-col">
-            <div className="text-2xl font-serif font-medium italic tracking-tight" style={{ color: "var(--ink-primary)" }}>
-              Brim
+            <div className="text-3xl font-serif font-medium italic tracking-tight mb-1" style={{ color: "var(--ink-primary)" }}>
+              Aegis
             </div>
             <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-muted)" }}>
               Expense Intelligence

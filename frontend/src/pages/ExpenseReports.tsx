@@ -74,7 +74,7 @@ export function ExpenseReports() {
           {history.map((msg, i) => (
             <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"} animate-slide-up`}>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 ml-1 mr-1">
-                {msg.role === "user" ? "You" : "Brim AI"}
+                {msg.role === "user" ? "You" : "Aegis AI"}
               </div>
               <div className={`px-4 py-3 rounded-2xl text-[13px] font-medium max-w-[85%] leading-relaxed shadow-sm ${
                 msg.role === "user" 
@@ -88,7 +88,7 @@ export function ExpenseReports() {
 
           {loading && (
             <div className="flex flex-col items-start animate-fade-in">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Brim AI</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Aegis AI</div>
               <div className="px-5 py-3 rounded-2xl text-[13px] font-medium bg-slate-50 text-slate-600 rounded-tl-sm border border-slate-200 flex items-center gap-3 shadow-sm">
                 <div className="flex gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{animationDelay: "0ms"}}></div>

@@ -140,7 +140,7 @@ export function TalkToData() {
               setResult(res);
               setLastToolCall(`✓ "${res.ui_config.title}" (${res.data.length} rows)`);
               setLoading(false);
-              return `Chart updated with ${res.data.length} data points for: ${q}`;
+              return `Chart updated successfully. Here is the data summary to explain to the user: ${res.summary}`;
             } catch (toolErr: any) {
               console.error("[ElevenLabs] tool error:", toolErr);
               setLastToolCall(`✗ Query failed`);
@@ -298,7 +298,7 @@ export function TalkToData() {
 
               {loading && (
                 <div className="rounded-2xl border border-secondary/20 bg-secondary/5 ai-glow px-6 py-8 text-center">
-                  <div className="text-secondary font-bold text-sm animate-pulse">Brim AI is thinking…</div>
+                  <div className="text-secondary font-bold text-sm animate-pulse">Aegis AI is thinking…</div>
                   <div className="flex justify-center gap-1.5 mt-4">
                     {[0, 1, 2].map((i) => (
                       <motion.div key={i} className="w-2 h-2 rounded-full bg-secondary"
@@ -402,7 +402,7 @@ export function TalkToData() {
               <div className="flex items-center justify-between border-b border-outline-variant/50 pb-4">
                 <div className="flex items-center gap-2 text-secondary font-bold text-sm">
                   <span className="material-symbols-outlined text-[20px]">hearing</span>
-                  Live Visualizations &amp; Transcripts
+                  Live Visualizations
                 </div>
               </div>
 

@@ -285,8 +285,7 @@ export function Dashboard() {
                     <YAxis tick={{ fontSize: 11, fill: chartTick }} stroke="none"
                       tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                     <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [cad(v)]} />
-                    <ReferenceLine x="Feb" stroke="#ba1a1a" strokeDasharray="4 2"
-                      label={{ value: "⚠ $264K outlier", fill: "#ba1a1a", fontSize: 10, fontWeight: 700, position: "top" }} />
+
                     <Area type="monotone" dataKey="spend" stroke={chartAccent} strokeWidth={2.5} fill="url(#spendGrad)" />
                     <Area type="monotone" dataKey="budget" stroke={chartGrid} strokeWidth={1.5}
                       strokeDasharray="6 3" fill="none" />
