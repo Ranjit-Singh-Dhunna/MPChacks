@@ -32,7 +32,7 @@ DEFAULT_RULES = [
     {
         "rule_name": "Alcohol Restriction",
         "rule_type": "MCC_BANNED",
-        "rule_parameters": {"item": "Alcohol", "exception": "Dining with a customer"},
+        "rule_parameters": {"item": "Alcohol", "keywords": ["alcohol", "liquor"], "exception": "Dining with a customer"},
         "severity": "CRITICAL",
         "source_text": "Unless dining with a customer, expensing alcoholic beverages is not permitted.",
     },

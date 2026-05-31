@@ -11,9 +11,9 @@ export async function exportElementToPDF(elementId: string, filename: string) {
     element.classList.add("pdf-exporting");
 
     const opt = {
-      margin:       [15, 0], // 15mm top/bottom margin, 0 left/right
+      margin:       [15, 0] as [number, number], // 15mm top/bottom margin, 0 left/right
       filename:     `${filename}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
+      image:        { type: 'jpeg' as const, quality: 0.98 },
       html2canvas:  { 
         scale: 2, 
         useCORS: true, 
@@ -21,8 +21,8 @@ export async function exportElementToPDF(elementId: string, filename: string) {
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight
       },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak:    { mode: ['css', 'legacy'] }
+      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+      pagebreak:    { mode: ['css', 'legacy'] as const }
     };
 
     // html2pdf automatically handles full-height capture internally

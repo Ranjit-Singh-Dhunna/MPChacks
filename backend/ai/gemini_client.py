@@ -24,6 +24,7 @@ class GeminiClient:
         self.api_key = api_key or settings.gemini_api_key
         self._model = None
         self.init_error = ""
+        self._cooldown_until = 0.0
         if self.api_key:
             try:
                 import google.generativeai as genai
@@ -53,10 +54,12 @@ class GeminiClient:
                 text = text.lstrip()[4:]
         return text.strip()
 
-    def call_json(self, prompt: str, max_retries: int = 1, response_schema: dict | None = None):
+    def call_json(self, prompt: str, max_retries: int = 0, response_schema: dict | None = None):
         """Return parsed JSON (dict or list), or {"_fallback": True} on failure."""
         if not self.available:
             return {"_fallback": True, "_reason": self.init_error or "unavailable", "_model": _MODEL_NAME}
+        if time.monotonic() < self._cooldown_until:
+            return {"_fallback": True, "_reason": "gemini_rate_limited_cooldown", "_model": _MODEL_NAME}
 
         generation_config = dict(_JSON_GENERATION_CONFIG)
         if response_schema:
@@ -81,6 +84,9 @@ class GeminiClient:
                     last_err = f"{type(exc).__name__}: {exc}"
             except Exception as exc:  # noqa: BLE001
                 last_err = f"{type(exc).__name__}: {exc}"
+                if "429" in last_err or "quota" in last_err.lower() or "rate" in last_err.lower():
+                    self._cooldown_until = time.monotonic() + 60.0
+                    break
             logger.warning(
                 "Gemini JSON call failed attempt=%s/%s model=%s reason=%s",
                 attempt + 1,

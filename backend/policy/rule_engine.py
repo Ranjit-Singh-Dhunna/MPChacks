@@ -49,19 +49,29 @@ class RuleEngine:
             return self._budget_cap(rule, txn, employee, month_spend_cad, p)
         if t == "TIP_CAP":
             return self._tip_cap(rule, txn, p)
+        if t == "EXCLUDED_REIMBURSEMENT":
+            return self._excluded_reimbursement(rule, txn, p)
+        if t == "CARD_USAGE_RESTRICTION":
+            return self._card_usage_restriction(rule, txn, employee, p)
+        if t == "VEHICLE_RESTRICTION":
+            return self._vehicle_restriction(rule, txn, p)
         return RuleResult(violated=False)
 
     def _amount_limit(self, rule, txn, p) -> RuleResult:
-        limit = float(p.get("max_amount_usd", 50.0))
+        limit_usd = float(p.get("max_amount_usd", 50.0))
+        limit_cad = float(p.get("max_amount_cad") or limit_usd * txn.conversion_rate)
         mcc_filter = p.get("applies_to_mcc")
         if mcc_filter and txn.mcc_code not in mcc_filter:
             return RuleResult(violated=False)
         requires_pre_auth = bool(p.get("requires_pre_authorization", True))
-        if txn.amount_usd > limit and (not requires_pre_auth or not txn.is_pre_authorized):
+        if txn.amount_cad > limit_cad and (not requires_pre_auth or not txn.is_pre_authorized):
             suffix = " with no pre-authorization" if requires_pre_auth else ""
             return RuleResult(
                 violated=True, severity=rule.severity, rule_name=rule.rule_name,
-                reason=f"${txn.amount_usd:.2f} USD exceeds ${limit:.0f} limit{suffix}",
+                reason=(
+                    f"${txn.amount_usd:.2f} USD = ${txn.amount_cad:.2f} CAD exceeds "
+                    f"${limit_cad:.2f} CAD threshold{suffix}"
+                ),
             )
         return RuleResult(violated=False)
 
@@ -84,6 +94,15 @@ class RuleEngine:
                 violated=True, severity=rule.severity, rule_name=rule.rule_name,
                 reason=f"MCC {txn.mcc_code} ({p.get('description', 'banned category')}) "
                        f"is prohibited",
+            )
+        terms = [p.get("item"), p.get("description"), *(p.get("keywords") or [])]
+        terms = [str(term).lower() for term in terms if term]
+        haystack = self._txn_text(txn)
+        if terms and any(term in haystack for term in terms):
+            label = terms[0]
+            return RuleResult(
+                violated=True, severity=rule.severity, rule_name=rule.rule_name,
+                reason=f"{label.title()} matched prohibited policy category",
             )
         return RuleResult(violated=False)
 
@@ -117,3 +136,33 @@ class RuleEngine:
         # No discrete tip field in the source data; rule is registered/editable but
         # cannot fire deterministically. Kept for policy completeness.
         return RuleResult(violated=False)
+
+    def _excluded_reimbursement(self, rule, txn, p) -> RuleResult:
+        haystack = self._txn_text(txn)
+        for item in p.get("excluded_items", []):
+            tokens = [token for token in str(item).lower().replace("-", " ").split() if token]
+            if tokens and all(token in haystack for token in tokens):
+                return RuleResult(
+                    violated=True, severity=rule.severity, rule_name=rule.rule_name,
+                    reason=f"{str(item).title()} is excluded from reimbursement",
+                )
+        return RuleResult(violated=False)
+
+    def _card_usage_restriction(self, rule, txn, employee, p) -> RuleResult:
+        # Source transactions do not expose a separate card-user identity. Without
+        # that field, this rule cannot be proven deterministically.
+        return RuleResult(violated=False)
+
+    def _vehicle_restriction(self, rule, txn, p) -> RuleResult:
+        # The policy text is trip-contextual, but source transactions only carry a
+        # single line item. Keep the rule editable and non-firing until traveler
+        # counts or vehicle class are available.
+        return RuleResult(violated=False)
+
+    @staticmethod
+    def _txn_text(txn) -> str:
+        return " ".join([
+            str(txn.merchant_name or ""),
+            str(txn.mcc_description or ""),
+            str(txn.mcc_code or ""),
+        ]).lower()
