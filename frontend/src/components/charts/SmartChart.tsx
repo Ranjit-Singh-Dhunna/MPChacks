@@ -111,7 +111,7 @@ export function SmartChart({ data, ui }: { data: Row[]; ui: UIConfig }) {
 
   // ── RECHARTS ──
   return (
-    <ResponsiveContainer width="100%" height={320}>
+    <ResponsiveContainer width="100%" height={380}>
       {ui.chart_type === "pie" ? (
         <PieChart>
           <Pie

@@ -71,7 +71,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <main
-        className="ml-60 flex-grow min-h-screen relative"
+        className="ml-60 w-[calc(100vw-15rem)] min-w-0 min-h-screen relative flex flex-col"
         style={{ background: "var(--bg-base)" }}
       >
         {children}

@@ -218,8 +218,9 @@ export function TalkToData() {
               {/* Scrollable upper area (Suggestions & History) */}
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
                 {/* Suggestions */}
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2">Suggested Questions</div>
+                {history.length === 0 && (
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2">Suggested Questions</div>
                   <div className="grid grid-cols-1 gap-1.5">
                     {SUGGESTIONS.map((s) => (
                       <button
@@ -232,6 +233,7 @@ export function TalkToData() {
                     ))}
                   </div>
                 </div>
+                )}
 
                 {/* History */}
                 {history.length > 0 && (
@@ -264,7 +266,7 @@ export function TalkToData() {
                         }
                       }}
                       placeholder="Ask anything about your expenses…"
-                      className="flex-1 text-sm text-primary placeholder:text-on-surface-variant/60 outline-none bg-transparent resize-none min-h-[60px]"
+                      className="flex-1 text-sm text-primary placeholder:text-on-surface-variant/60 outline-none bg-transparent resize-none min-h-[44px]"
                       disabled={loading}
                     />
                   </div>
@@ -284,7 +286,7 @@ export function TalkToData() {
             </div>
 
             {/* RIGHT PANEL */}
-            <div className="flex-1 overflow-y-auto p-8">
+            <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-8">
               {error && (
                 <div className="rounded-2xl border border-error/20 bg-error-container/20 px-5 py-4 text-sm text-error font-semibold mb-5">{error}</div>
               )}
@@ -315,13 +317,7 @@ export function TalkToData() {
               <AnimatePresence mode="wait">
                 {result && !loading && (
                   <motion.div key={result.question} {...FADE_SCALE}>
-                    <ChainOfTrust
-                      durationMs={1600}
-                      rowCount={result.data.length}
-                      queryString={result.query_string}
-                      usedFallback={result.used_fallback}
-                      fallbackReason={result.fallback_reason}
-                    />
+
                     <div className="card p-6">
                       <div className="flex items-start justify-between mb-1 gap-3 flex-wrap">
                         <div>
@@ -357,9 +353,7 @@ export function TalkToData() {
                             </button>
                           ))}
                         </div>
-                        <code className="rounded-xl bg-surface-container-low border border-outline-variant px-3 py-1.5 font-mono text-[10px] text-on-surface-variant truncate block max-w-full">
-                          {result.query_string}
-                        </code>
+
                       </div>
                     </div>
                   </motion.div>
