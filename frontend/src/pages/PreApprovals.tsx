@@ -15,7 +15,7 @@ export function PreApprovals() {
   // If a specific approval is selected, show "AI Pre-Approval Workflow" Decision Dossier view
   if (selectedApproval) {
     return (
-      <div className="flex flex-col h-full bg-background text-on-background min-h-screen">
+      <div className="flex flex-col h-full bg-background text-on-background min-h-[95vh]">
         {/* Top Header */}
         <div className="px-8 py-5 border-b border-outline-variant bg-white sticky top-0 z-10">
           <div className="flex justify-between items-center">
@@ -237,7 +237,7 @@ export function PreApprovals() {
 
   // Otherwise, show "Expense Reports" Grouped View queue
   return (
-    <div className="flex flex-col h-full bg-background text-on-background min-h-screen">
+    <div className="flex flex-col h-full bg-background text-on-background min-h-[95vh]">
       {/* Top Header */}
       <div className="px-8 py-5 border-b border-outline-variant bg-white sticky top-0 z-10">
         <div className="flex justify-between items-start">
