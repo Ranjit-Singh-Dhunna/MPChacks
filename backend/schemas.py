@@ -51,6 +51,9 @@ class IngestRequest(BaseModel):
     use_default: bool = True
 
 
+
+
+
 class IngestResult(BaseModel):
     rows_loaded: int
     rows_skipped: int
@@ -66,6 +69,8 @@ class AnalysisResult(BaseModel):
     ai_calls_made: int
     ai_call_ratio: float
     duration_ms: int
+    risk_profiles_built: Optional[int] = 0
+    detectors_run: Optional[int] = 0
 
 
 # ---- Policy ----
@@ -288,3 +293,26 @@ class DashboardStats(BaseModel):
     ai_call_ratio: float
     top_categories: list[dict[str, Any]]
     recent_flagged: list[TransactionResponse]
+
+
+# ---- Fraud Intelligence ----
+class EmployeeRiskProfileResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    employee_id: str
+    employee_name: str
+    department: str
+    composite_score: int
+    risk_tier: str
+    signal_breakdown: dict[str, Any]
+    top_signals: list[str]
+    transaction_count: int
+    total_spend_cad: float
+    flags_count: int
+
+
+class FraudIntelligenceResponse(BaseModel):
+    clusters: list[FraudClusterResponse]
+    risk_profiles: list[EmployeeRiskProfileResponse]
+    risk_distribution: dict[str, int]   # tier -> count
+    total_detectors_run: int
+    detection_patterns: list[str]       # unique pattern types found

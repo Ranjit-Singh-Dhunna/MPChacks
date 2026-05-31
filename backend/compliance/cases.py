@@ -68,6 +68,11 @@ def _plain_cluster_title(cluster: FraudCluster) -> str:
         "STRUCTURING": "Repeated round-number charges",
         "OUTLIER": "Unusual transaction amount",
         "SHELL_VENDOR": "Possible new shell vendor",
+        "BENFORDS_VIOLATION": "Expense digit pattern anomaly",
+        "VELOCITY_SPIKE": "Abnormal spending velocity",
+        "DUPLICATE_EXPENSE": "Possible duplicate expense",
+        "PEER_ANOMALY": "Spending above peer group",
+        "MERCHANT_CONCENTRATION": "Disproportionate vendor concentration",
     }
     return labels.get(cluster.pattern_type, cluster.pattern_type.replace("_", " ").title())
 

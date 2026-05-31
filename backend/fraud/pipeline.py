@@ -10,9 +10,9 @@ from sqlalchemy.orm import Session
 
 from ai.gemini_client import gemini
 from compliance.cases import sync_compliance_cases
-from fraud.detectors import FraudFlag, run_all_detectors
+from fraud.engine import FraudFlag, run_all_detectors, build_risk_profiles
 from ingestion.enricher import lookup_mcc_category
-from models import Employee, FraudCluster, Policy, Transaction
+from models import Employee, EmployeeRiskProfileModel, FraudCluster, Policy, Transaction
 from policy.rule_engine import RuleEngine
 
 SEVERITY_SCORE = {"CRITICAL": 90, "HIGH": 70, "MEDIUM": 45, "LOW": 20}
@@ -45,6 +45,7 @@ def _load_df(db: Session) -> pd.DataFrame:
         "transaction_date": t.transaction_date,
         "mcc_code": t.mcc_code,
         "mcc_description": t.mcc_description,
+        "department": t.department,
     } for t in rows])
 
 
@@ -149,6 +150,31 @@ def run_fraud_pipeline(db: Session) -> dict:
         db.add(cluster)
 
     db.flush()
+
+    # ---- Tier 2b: employee risk profiles ----
+    policy_viol_counts: dict[str, int] = {}
+    for t in txns:
+        if t.policy_flag == "VIOLATION":
+            policy_viol_counts[t.employee_id] = policy_viol_counts.get(t.employee_id, 0) + 1
+
+    profiles = build_risk_profiles(df, flags, policy_viol_counts)
+    db.query(EmployeeRiskProfileModel).delete()
+    from datetime import datetime as _dt
+    for p in profiles:
+        db.add(EmployeeRiskProfileModel(
+            employee_id=p.employee_id,
+            employee_name=p.employee_name,
+            department=p.department,
+            composite_score=p.composite_score,
+            risk_tier=p.risk_tier,
+            signal_breakdown=p.signal_breakdown,
+            top_signals=p.top_signals,
+            transaction_count=p.transaction_count,
+            total_spend_cad=p.total_spend_cad,
+            flags_count=p.flags_count,
+            updated_at=_dt.utcnow(),
+        ))
+
     sync_compliance_cases(db)
     db.commit()
 
@@ -163,4 +189,6 @@ def run_fraud_pipeline(db: Session) -> dict:
         "ai_calls_made": ai_calls,
         "ai_call_ratio": round(ai_calls / total, 4) if total else 0.0,
         "duration_ms": duration,
+        "risk_profiles_built": len(profiles),
+        "detectors_run": len(run_all_detectors.__wrapped__) if hasattr(run_all_detectors, '__wrapped__') else 10,
     }

@@ -165,4 +165,20 @@ class ComplianceCaseEvent(Base):
     case = relationship("ComplianceCase", back_populates="events")
 
 
+class EmployeeRiskProfileModel(Base):
+    __tablename__ = "employee_risk_profiles"
+
+    employee_id: Mapped[str] = mapped_column(String(16), primary_key=True)
+    employee_name: Mapped[str] = mapped_column(String(128))
+    department: Mapped[str] = mapped_column(String(64), index=True)
+    composite_score: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    risk_tier: Mapped[str] = mapped_column(String(16), index=True)
+    signal_breakdown: Mapped[dict] = mapped_column(JSON, default=dict)
+    top_signals: Mapped[list] = mapped_column(JSON, default=list)
+    transaction_count: Mapped[int] = mapped_column(Integer, default=0)
+    total_spend_cad: Mapped[float] = mapped_column(Float, default=0.0)
+    flags_count: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 Index("ix_compliance_case_status_risk", ComplianceCase.status, ComplianceCase.risk_score)
