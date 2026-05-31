@@ -42,25 +42,25 @@ const ACTION_COPY: Record<CaseAction, string> = {
 };
 
 const SEVERITY_STYLES: Record<Severity, string> = {
-  CRITICAL: "bg-error-container text-error border-error/20",
-  HIGH: "bg-orange-50 text-orange-700 border-orange-200",
-  MEDIUM: "bg-amber-50 text-amber-700 border-amber-200",
+  CRITICAL: "bg-blue-100 text-blue-900 border-blue-300",
+  HIGH: "bg-blue-50 text-blue-700 border-blue-200",
+  MEDIUM: "bg-slate-50 text-slate-600 border-slate-200",
   LOW: "bg-surface-container text-on-surface-variant border-outline-variant",
 };
 
 function riskTone(severity: Severity) {
-  if (severity === "CRITICAL") return "border-l-error bg-error-container/20";
-  if (severity === "HIGH") return "border-l-orange-400 bg-orange-50/70";
-  if (severity === "MEDIUM") return "border-l-amber-300 bg-amber-50/70";
+  if (severity === "CRITICAL") return "border-l-blue-600 bg-blue-50/60";
+  if (severity === "HIGH") return "border-l-blue-400 bg-blue-50/30";
+  if (severity === "MEDIUM") return "border-l-slate-400 bg-slate-50/50";
   return "border-l-outline-variant bg-white";
 }
 
 function StatusBadge({ status }: { status: ComplianceCaseStatus }) {
   const styles: Record<ComplianceCaseStatus, string> = {
     OPEN: "bg-secondary/10 text-secondary border-secondary/20",
-    ESCALATED: "bg-error-container text-error border-error/20",
-    INFO_REQUESTED: "bg-amber-50 text-amber-700 border-amber-200",
-    REVIEWED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    ESCALATED: "bg-blue-100 text-blue-900 border-blue-200",
+    INFO_REQUESTED: "bg-blue-50 text-blue-700 border-blue-200",
+    REVIEWED: "bg-slate-100 text-slate-700 border-slate-200",
     DISMISSED: "bg-surface-container text-on-surface-variant border-outline-variant",
     RESOLVED: "bg-surface-container text-on-surface-variant border-outline-variant",
   };
@@ -237,18 +237,18 @@ function CaseDetailPanel({
         <p className="mt-3 text-sm leading-6 text-on-surface-variant">{detail.summary}</p>
       </div>
 
-      <div className="grid grid-cols-3 border-b border-outline-variant/50 bg-secondary text-white m-5 rounded-lg shadow-sm">
-        <div className="p-4">
-          <div className="text-[10px] font-black uppercase tracking-wider text-white/70">Exposure</div>
-          <div className="mt-1 font-mono text-2xl font-black">{cadPrecise(detail.exposure_cad)}</div>
+      <div className="flex gap-3 m-5">
+        <div className="flex-1 bg-blue-50 rounded-2xl p-4 shadow-sm border border-blue-100">
+          <div className="text-xs font-semibold text-blue-600">Exposure</div>
+          <div className="mt-1 font-mono text-3xl font-bold text-blue-950">{cadPrecise(detail.exposure_cad)}</div>
         </div>
-        <div className="p-4 border-x border-white/20">
-          <div className="text-[10px] font-black uppercase tracking-wider text-white/70">Risk</div>
-          <div className="mt-1 text-2xl font-black">{detail.risk_score}/100</div>
+        <div className="flex-1 bg-blue-50 rounded-2xl p-4 shadow-sm border border-blue-100">
+          <div className="text-xs font-semibold text-blue-600">Risk</div>
+          <div className="mt-1 text-3xl font-bold text-blue-950">{detail.risk_score}/100</div>
         </div>
-        <div className="p-4">
-          <div className="text-[10px] font-black uppercase tracking-wider text-white/70">Action</div>
-          <div className="mt-1 text-sm font-bold">{detail.recommended_action}</div>
+        <div className="flex-1 bg-blue-50 rounded-2xl p-4 shadow-sm border border-blue-100">
+          <div className="text-xs font-semibold text-blue-600">Action</div>
+          <div className="mt-1 text-lg font-bold text-blue-950 leading-snug">{detail.recommended_action}</div>
         </div>
       </div>
 
@@ -261,7 +261,7 @@ function CaseDetailPanel({
         </section>
 
         <section>
-          <h3 className="section-label">Why this was flagged</h3>
+          <h3 className="section-label">Policy Compliance: Why this was flagged</h3>
           <div className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant max-h-48 overflow-y-auto no-scrollbar">
             {anomaly && (
               <div className="flex gap-2">
