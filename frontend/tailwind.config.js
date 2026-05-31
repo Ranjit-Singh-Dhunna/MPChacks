@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  darkMode: ["selector", "[data-theme='dark']"],
   theme: {
     extend: {
       colors: {
@@ -85,16 +86,16 @@ export default {
         "gutter": "16px"
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Space Grotesk", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
         "data-mono": ["JetBrains Mono"],
-        "label-caps": ["Inter"],
-        "body-sm": ["Inter"],
-        "headline-md": ["Inter"],
-        display: ["Inter"],
-        "body-md": ["Inter"],
-        "body-lg": ["Inter"],
-        "headline-sm": ["Inter"]
+        "label-caps": ["Space Grotesk"],
+        "body-sm": ["Space Grotesk"],
+        "headline-md": ["Space Grotesk"],
+        display: ["Space Grotesk"],
+        "body-md": ["Space Grotesk"],
+        "body-lg": ["Space Grotesk"],
+        "headline-sm": ["Space Grotesk"]
       },
     },
   },

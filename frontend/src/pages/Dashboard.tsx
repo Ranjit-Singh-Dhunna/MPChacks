@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../lib/theme";
 import { motion } from "framer-motion";
 import {
   Area, AreaChart, CartesianGrid, ReferenceLine,
@@ -46,9 +47,9 @@ function KPICard({
 }
 
 function AIEfficiencyCard({
-  aiRatio, clusters, txnCount, index,
+  aiRatio, clusters, txnCount, index, isDark,
 }: {
-  aiRatio: number; clusters: number; txnCount: number; index: number;
+  aiRatio: number; clusters: number; txnCount: number; index: number; isDark: boolean;
 }) {
   // Derive actual call count from ratio × total (ratio is tiny: ~0.002)
   const aiCalls = aiRatio > 0 ? Math.max(1, Math.round(aiRatio * txnCount)) : 0;
@@ -65,7 +66,9 @@ function AIEfficiencyCard({
       {/* Headline: actual AI calls */}
       <div className="flex items-end gap-2 mt-2">
         <div className="text-3xl font-black font-mono"
-          style={{ background: "linear-gradient(90deg,#7c3aed,#0051d5)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+          style={isDark
+            ? { color: "#FCD535" }
+            : { background: "linear-gradient(90deg,#7c3aed,#0051d5)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
           {aiCalls > 0 ? aiCalls : clusters}
         </div>
         <div className="text-xs text-on-surface-variant mb-1">
@@ -112,7 +115,7 @@ function AIEfficiencyCard({
           <div className="h-2 bg-surface-container-high rounded-full overflow-hidden">
             <motion.div
               className="h-full rounded-full"
-              style={{ background: "linear-gradient(90deg, #7c3aed, #0051d5)" }}
+              style={{ background: isDark ? "linear-gradient(90deg, #FCD535, #f0b90b)" : "linear-gradient(90deg, #7c3aed, #0051d5)" }}
               initial={{ width: 0 }}
               animate={{ width: `${clusterBarPct}%` }}
               transition={{ duration: 1.0, ease: "easeOut", delay: 0.45 }}
@@ -139,10 +142,24 @@ function buildChartData(topCats: { label: string; value: number }[]) {
 }
 
 export function Dashboard() {
+  const { isDark } = useTheme();
   const { data, loading, reload } = useAsync(getDashboard, []);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const nav = useNavigate();
+
+  const chartAccent  = isDark ? "#FCD535" : "#0051d5";
+  const chartGrid    = isDark ? "#2b3139" : "#f1f3f4";
+  const chartTick    = isDark ? "#848e9c" : "#45464d";
+  const tooltipStyle = {
+    background: isDark ? "#1e2329" : "#fff",
+    border: `1px solid ${isDark ? "#2b3139" : "#c6c6cd"}`,
+    borderRadius: 12, fontSize: 12,
+    color: isDark ? "#eaecef" : "#191c1e",
+  };
+  const catColors = isDark
+    ? ["#FCD535", "#0ecb81", "#a78bfa", "#f6465d", "#38bdf8", "#f0b90b"]
+    : ["#0051d5", "#6f7ae5", "#34d399", "#f59e0b", "#f43f5e", "#38bdf8"];
 
   const runPipeline = async () => {
     setBusy(true);
@@ -243,7 +260,7 @@ export function Dashboard() {
                 sub="awaiting decision"
                 strip="border-l-4 border-l-amber-400"
                 to="/approvals" />
-              <AIEfficiencyCard index={3} aiRatio={aiRatio} clusters={data.fraud_clusters} txnCount={data.transaction_count} />
+              <AIEfficiencyCard index={3} aiRatio={aiRatio} clusters={data.fraud_clusters} txnCount={data.transaction_count} isDark={isDark} />
             </div>
 
             {/* FRAUD CLUSTERS PREVIEW */}
@@ -297,22 +314,19 @@ export function Dashboard() {
                   <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#0051d5" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#0051d5" stopOpacity={0.02} />
+                        <stop offset="0%" stopColor={chartAccent} stopOpacity={0.25} />
+                        <stop offset="100%" stopColor={chartAccent} stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="2 4" stroke="#f1f3f4" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#45464d" }} stroke="none" />
-                    <YAxis tick={{ fontSize: 11, fill: "#45464d" }} stroke="none"
+                    <CartesianGrid strokeDasharray="2 4" stroke={chartGrid} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: chartTick }} stroke="none" />
+                    <YAxis tick={{ fontSize: 11, fill: chartTick }} stroke="none"
                       tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip
-                      contentStyle={{ background: "#fff", border: "1px solid #c6c6cd", borderRadius: 12, fontSize: 12 }}
-                      formatter={(v: number) => [cad(v)]}
-                    />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [cad(v)]} />
                     <ReferenceLine x="Feb" stroke="#ba1a1a" strokeDasharray="4 2"
                       label={{ value: "⚠ $264K outlier", fill: "#ba1a1a", fontSize: 10, fontWeight: 700, position: "top" }} />
-                    <Area type="monotone" dataKey="spend" stroke="#0051d5" strokeWidth={2.5} fill="url(#spendGrad)" />
-                    <Area type="monotone" dataKey="budget" stroke="#c6c6cd" strokeWidth={1.5}
+                    <Area type="monotone" dataKey="spend" stroke={chartAccent} strokeWidth={2.5} fill="url(#spendGrad)" />
+                    <Area type="monotone" dataKey="budget" stroke={chartGrid} strokeWidth={1.5}
                       strokeDasharray="6 3" fill="none" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -436,7 +450,7 @@ export function Dashboard() {
                 {data.top_categories.map((cat, i) => {
                   const total = data.total_spend_cad;
                   const pctVal = total > 0 ? (cat.value / total) * 100 : 0;
-                  const colors = ["#0051d5", "#6f7ae5", "#34d399", "#f59e0b", "#f43f5e", "#38bdf8"];
+                  const colors = catColors;
                   return (
                     <div key={cat.label} className="text-center">
                       <div
