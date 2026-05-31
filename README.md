@@ -1,262 +1,142 @@
-# Brim — AI-Powered Expense Intelligence Platform
+# CANHEALTH Business Plan
 
-An AI expense intelligence platform for SMBs, built on a **deterministic-first / AI-second**
-pipeline. Python rules and pandas clustering handle ~85 % of transactions and policy checks.
-Google Gemini is invoked only as a *reasoner and translator* on the ~5–15 % that are flagged
-or anomalous — it never calculates.
+## Executive Summary
 
----
+**CANHEALTH** is a healthcare-focused financial technology platform that combines preventative fraud management, financial accessibility, and business intelligence for healthcare providers.
 
-## Capabilities
+Our mission is to protect healthcare companies from fraudulent transactions while improving patient access to care through the **CANHEALTH Credit Line**, powered by BRIM Financial infrastructure.
 
-| # | Feature | Description |
-|---|---------|-------------|
-| 1 | **Talk to Your Data** | Natural-language queries → charts, tables, and voice summaries (ElevenLabs). Chain-of-trust shows whether the answer came from deterministic logic or AI. |
-| 2 | **Policy Compliance Engine** | Upload a PDF policy → AI extracts editable rules → deterministic per-transaction checks with severity levels. |
-| 3 | **Fraud Cluster Detection** | Ten pure-pandas detectors (smurfing, split billing, structuring, outlier, shell vendor, Benford's law, velocity spike, duplicate expense, peer anomaly, merchant concentration) with optional Gemini narrative on CRITICAL/HIGH clusters. |
-| 4 | **AI Pre-Approval Workflow** | Dossier-first approval queue — confidence gauge, AI recommendation, risk/mitigating factors, policy compliance, and budget utilization are shown for every pending transaction. |
-| 5 | **Automated Expense Reports** | Auto-grouped, policy-checked reports with AI executive summaries and PDF export. |
-| 6 | **Compliance Case Management** | Cases auto-generated from fraud clusters and violations. Escalate, request info, dismiss, or add notes with a full audit trail. |
+By integrating enterprise-grade financial controls, AI-driven fraud detection, and flexible healthcare financing, CANHEALTH enables healthcare organizations to reduce financial risk, improve cash flow, and support better patient outcomes.
 
 ---
 
-## Architecture
+## Problem Statement
 
-```
-CSV → POST /api/ingest → SQLite (4,235 rows, FX-normalized to CAD)
-                ↓
-POST /api/analyze → fraud/pipeline.py
-  Tier 1: policy/rule_engine.py    — deterministic per-transaction checks
-  Tier 2: fraud/detectors.py       — pandas clustering (5 pattern types)
-  Tier 3: ai/gemini_client.py      — Gemini called ONLY on CRITICAL/HIGH clusters
-                ↓
-compliance/cases.py → ComplianceCase rows (audit queue)
-```
+Healthcare providers and patients face two major systemic challenges:
 
-### Fraud Detection Justification
-Brim's `engine.py` implements a 10-detector deterministic and statistical pipeline instead of relying solely on an LLM for fraud detection. 
-This is because expense fraud is often numerical and systemic, which LLMs struggle to catch reliably across thousands of rows without hallucinating or missing strict mathematical conditions. 
-Our pandas-based engine targets 10 unique "kill zones"—classes of fraud that require specialized logical or statistical evaluation:
-- **Smurfing / Structuring**: Circumvents hard limits via multiple smaller charges. Requires historical windowing.
-- **Split Billing / Duplicate Expenses**: Identifies deliberate cost-splitting across employees or copy-pasted receipts.
-- **Statistical Outliers / Peer Anomalies**: Flags extreme variations within an MCC or department using Z-scores.
-- **Benford's Law**: A Big 4 forensic accounting standard. Proves fabrication if an employee's expense amounts deviate from the expected logarithmic digit distribution.
-- **Velocity Spikes**: Compares current spending frequency and volume against a personalized rolling historical baseline.
-- **Merchant Concentration (HHI) / Shell Vendors**: Uses Herfindahl-Hirschman Index and vendor age to catch kickback schemes or employee-owned shell companies.
-By computing these deterministically, the engine guarantees 100% auditable, hallucination-free compliance, reserving LLMs strictly for plain-english summarization (Tier 3).
+### 1. Financial Accessibility
+* **Limited Access:** Mental health and wellness services remain inaccessible for many Canadians.
+* **High Demand:** Approximately 4.4–6 million Canadians use therapy annually.
+* **Cost Barriers:** The leading reason patients discontinue therapy is cost.
+* **Out-of-Pocket Burden:** Approximately 30% of Canadians pay for therapy out-of-pocket, while approximately 70% rely on employer-sponsored insurance benefits.
+* **Economic Pressures:** Canada’s unemployment rate reached 6.9%, increasing the number of Canadians losing access to employer-sponsored insurance coverage.
 
-## Tech Stack
+As a result, many individuals are unable to continue receiving critical care when they need it most.
 
-| Layer | Technologies |
-|-------|-------------|
-| **Backend** | Python 3.11 · FastAPI · SQLAlchemy · SQLite · Pandas · SciPy |
-| **AI** | Google Gemini (`google-generativeai`) — reasoner / translator only |
-| **Voice** | ElevenLabs — TalkToData voice summaries |
-| **Frontend** | React 19 · TypeScript 5.7 · Vite 6 · Tailwind CSS 3 |
-| **Visualization** | Recharts · react-globe.gl · Three.js · Framer Motion |
-| **PDF** | html2canvas + jsPDF (frontend) · PyPDF2 (backend policy extraction) |
-| **Infra** | Docker Compose (2-service) |
+### 2. Healthcare Fraud and Payment Risk
+Healthcare providers face growing operational and financial risks from:
+* Non-payment of services
+* Insurance disputes
+* Credit card chargebacks
+* Fraudulent insurance claims
+* Severe administrative inefficiencies
+
+Many small and medium-sized healthcare organizations lack the capital, technical expertise, and resources to build sophisticated fraud detection and financial management systems internally.
 
 ---
 
-## Quickstart
+## Our Solution
 
-### Option A — Docker (recommended)
+### CANHEALTH Credit Line
+The CANHEALTH Credit Line improves access to healthcare services while simultaneously reducing payment-related risk for providers. 
 
-```bash
-cp .env.example .env          # add keys (both optional)
-docker compose up --build     # backend :8000, frontend :5173
-```
+**Key benefits include:**
+* Flexible repayment options tailored for patients.
+* Improved affordability of therapy, mental health, and wellness services.
+* Loyalty-based rewards designed to incentivize and subsidize healthcare spending.
+* Greater financial safety nets and accessibility during periods of unemployment or loss of benefits.
 
-### Option B — Manual
+*Note: Unlike traditional debit transactions, credit-based transactions provide enhanced fraud monitoring, proactive dispute management, and robust transaction protection.*
 
-#### 1. Generate synthetic data
+### CANHEALTH Fraud Detection Platform
+Healthcare providers gain seamless access to a robust dashboard featuring:
+* Preventative, real-time fraud monitoring
+* Risk forecasting and exposure alerts
+* Detailed spending analytics
+* Granular financial governance controls
+* Automated regulatory compliance reporting
 
-```bash
-cd data
-python generate_data.py       # writes transactions.csv + employees.json
-```
-
-#### 2. Backend
-
-```bash
-cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp ../.env.example .env       # then fill in keys (optional)
-uvicorn main:app --reload     # http://localhost:8000/docs
-```
-
-Then load and analyze the data:
-
-```bash
-curl -X POST http://localhost:8000/api/ingest \
-  -H "Content-Type: application/json" \
-  -d '{"use_default": true}'
-curl -X POST http://localhost:8000/api/analyze
-```
-
-#### 3. Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev                   # http://localhost:5173
-```
+The platform proactively identifies potentially fraudulent activity **before** it translates into an actual financial loss. Through this framework, healthcare providers receive actionable intelligence to reduce fraud exposure, improve collections, strengthen cash flow, and make deeply informed operational decisions.
 
 ---
 
-## Environment Variables
+## Technology Platform
 
-All keys are optional — every AI feature gracefully degrades when keys are absent.
+### Powered by BRIM
+**BRIM Financial** serves as the core financial infrastructure layer that transforms small and medium-sized healthcare businesses into enterprise-grade organizations. 
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `GEMINI_API_KEY` | — | Enables AI narratives, NL queries, policy extraction, dossier reasoning |
-| `ELEVENLABS_API_KEY` | — | Enables voice summaries in Talk to Data |
-| `ELEVENLABS_VOICE_ID` | Rachel | Voice selection for ElevenLabs |
-| `FX_RATE_USD_TO_CAD` | `1.379` | Override the USD → CAD exchange rate |
+Most small businesses rely exclusively on legacy accounting tools (such as QuickBooks) for backward-looking bookkeeping, basic expense tracking, and manual invoicing. However, they consistently lack:
+* Dynamic annual budgeting
+* Granular internal financial controls
+* Automated fraud monitoring
+* Corporate spending policies
+* Long-term predictive forecasting
 
----
+BRIM bridges this gap natively within the CANHEALTH platform by providing:
+* Corporate cards with programmable spending limits
+* Real-time spending controls and budget enforcement
+* Policy automation and automated workflows
+* Complete financial visibility
+* Advanced built-in fraud management tools
 
-## Frontend Pages
+### Artificial Intelligence Layer
 
-| Route | Page | Description |
-|-------|------|-------------|
-| `/` | **Home** | Animated 3D globe hero, feature cards, CSV drag-drop upload with 4-step pipeline overlay |
-| `/dashboard` | **Dashboard** | KPI cards (spend, violations, pending approvals, fraud clusters, AI efficiency), category breakdown, recent flagged transactions |
-| `/query` | **Talk to Data** | Natural-language input + voice mode → dynamic charts (bar, line, pie, area, table) with chain-of-trust visualization |
-| `/violations` | **Compliance** | Two tabs — *Cases* (risk-scored compliance case cards) and *Patterns* (fraud cluster cards with pattern-specific mini-charts) |
-| `/approvals` | **Approvals** | Dossier-first view — confidence ring, AI recommendation, risk/mitigating factors, policy compliance, budget utilization, employee history. Prev/Next with `←`/`→` keyboard shortcuts, sort by risk or recency |
-| `/approvals/history` | **Approval Queue** | Full table of pending approvals with AI verdict, risk bar, policy status, and "viewed" indicators |
-| `/reports` | **Expense Reports** | AI chat interface — type a prompt (e.g. "Generate a report for Sarah's San Diego trip"), get a live PDF preview with AI executive summary |
-| `/reports/:id` | **Report Detail** | Individual report with AI summary, line items, PDF preview, and CFO approval |
-| `/policy` | **Policy Settings** | Three tabs — *Active Rules*, *Upload Policy* (PDF → extracted rules), *Rule Builder* |
+#### 1. Gemini Integration
+CANHEALTH leverages Google's **Gemini** models to provide cutting-edge, automated intelligence:
+* Industry-specific fraud intelligence and anomaly tracking
+* Customized, dynamically adjusting rewards programs
+* Automated expense report generation and parsing
+* Intelligent spending policy recommendations
+* Dynamic financial forecasting
 
----
+Healthcare operators can query the platform using natural language to extract instant answers:
+* *"What was our largest expense in the past two months?"*
+* *"How much has marketing spent this quarter?"*
+* *"What are our highest-risk transaction categories?"*
+* *"Which departments exceed budget targets?"*
 
-## Backend API
-
-| Router | Key Endpoints |
-|--------|--------------|
-| **Ingest** | `POST /api/ingest` — CSV ingestion with FX normalization |
-| **Analyze** | `POST /api/analyze` — Runs the full Tier 1–3 pipeline |
-| **Dashboard** | `GET /api/dashboard` — Aggregated stats |
-| **Transactions** | `GET /api/transactions` — Paginated, filterable list |
-| **Compliance** | `GET /api/compliance/overview` · `GET /api/compliance/cases` · `PATCH /api/compliance/cases/{id}` · `GET /api/compliance/violations` · `GET /api/compliance/export` |
-| **Approvals** | `GET /api/approvals` — AI-enriched dossiers · `POST /api/approvals/{id}/decide` |
-| **Query** | `POST /api/query` — NL → pandas → results + chart config |
-| **Reports** | `GET /api/reports` · `POST /api/reports/generate` · `POST /api/reports/{id}/approve` · `POST /api/reports/ai-generate` |
-| **Policy** | `CRUD /api/policy/rules` · `POST /api/policy/upload` (PDF extraction) |
-| **Fraud Intel** | `GET /api/fraud/clusters` · `GET /api/fraud/intelligence` · `GET /api/fraud/risk-profiles` |
-
-Full Swagger docs available at `http://localhost:8000/docs`.
+#### 2. Conversational Agent Support
+Integrated **ElevenLabs** voice agents provide:
+* Accelerated onboarding pipelines for medical practices
+* A friction-free, simplified user experience
+* Guided interactive support for healthcare professionals with limited financial expertise
 
 ---
 
-## Project Structure
+## Competitive Advantage
 
-```
-├── backend/
-│   ├── main.py                  # FastAPI app, CORS, router registration
-│   ├── models.py                # SQLAlchemy ORM (Transaction, Employee, Policy, etc.)
-│   ├── schemas.py               # Pydantic request/response models
-│   ├── config.py                # Environment settings (pydantic-settings)
-│   ├── database.py              # SQLite connection + session management
-│   ├── ai/
-│   │   ├── gemini_client.py     # Thin Gemini wrapper with fallback
-│   │   ├── nl_query.py          # NL → pandas expression (sandboxed eval)
-│   │   ├── dossier.py           # Pre-approval AI dossier builder
-│   │   ├── report_generator.py  # AI-powered report generation
-│   │   └── voice.py             # ElevenLabs TTS integration
-│   ├── fraud/
-│   │   ├── engine.py            # Pattern detectors + anomaly scoring
-│   │   └── pipeline.py          # Tier 1–3 orchestrator
-│   ├── compliance/
-│   │   └── cases.py             # Cluster + violation → ComplianceCase sync
-│   ├── ingestion/
-│   │   ├── loader.py            # CSV data loading
-│   │   └── enricher.py          # Transaction enrichment + FX
-│   ├── policy/
-│   │   ├── rule_engine.py       # Deterministic per-transaction checks
-│   │   ├── extractor.py         # PDF → rules extraction (via Gemini)
-│   │   └── evaluator.py         # Rule evaluation engine
-│   ├── reports/
-│   │   ├── generator.py         # Expense report builder
-│   │   ├── formatter.py         # Report formatting
-│   │   └── latex.py             # LaTeX export
-│   └── routers/                 # One file per domain
-│       ├── ingest.py
-│       ├── transactions.py
-│       ├── compliance.py
-│       ├── approvals.py
-│       ├── query.py
-│       ├── reports.py
-│       ├── policy.py
-│       └── fraud_intel.py
-│
-├── frontend/
-│   └── src/
-│       ├── App.tsx              # Routes + Layout wrapper
-│       ├── index.css            # Design tokens, dark mode, component styles
-│       ├── api/client.ts        # All API calls (axios, proxied via Vite)
-│       ├── pages/               # 9 page components (see table above)
-│       ├── components/
-│       │   ├── charts/          # SmartChart (Recharts wrapper)
-│       │   ├── fraud/           # ClusterCard + pattern mini-charts
-│       │   ├── globe/           # GlobeHero + MiniGlobe (react-globe.gl)
-│       │   ├── layout/          # Sidebar, dark mode toggle
-│       │   ├── query/           # ChainOfTrust visualization
-│       │   ├── reports/         # ReportPreview (PDF export)
-│       │   ├── ui/              # Badge, KPICard, PageHeader, SideDrawer
-│       │   └── upload/          # UploadHero, PipelineOverlay
-│       ├── hooks/useAsync.ts    # Generic fetch hook
-│       ├── lib/                 # Utilities (format, geoData, motion, theme, pdfExport)
-│       └── types/index.ts       # All TypeScript interfaces
-│
-├── data/
-│   ├── generate_data.py         # Synthetic CSV + JSON generator
-│   ├── transactions.csv         # Default demo dataset (~4,235 rows)
-│   ├── employees.json           # Employee seed data
-│   └── mcc_codes.json           # MCC code reference lookup
-│
-├── docs/
-│   ├── engineering-decisions-taken.md
-│   └── valsoft_dataset_observations.md
-│
-├── docker-compose.yml
-├── .env.example
-└── CLAUDE.md                    # AI coding assistant guidance
-```
+While the majority of fintech and fraud prevention platforms target massive enterprise organizations, CANHEALTH focuses specifically on the underserved segment of **small and medium-sized healthcare businesses**.
+
+### Why CANHEALTH Wins
+* **Rapid Deployment:** Faster implementation with pre-built financial infrastructure.
+* **Reduced Overhead:** Lower operational and technical complexity.
+* **Vertical Integration:** Healthcare-specific fraud detection trained on medical industry risk vectors.
+* **AI-First Design:** Native AI-powered financial intelligence and automated policy enforcement.
+* **Dual-Sided Value:** Simultaneously improves patient accessibility while protecting provider margins.
+
+### Market Analogy
+| Entity | Traditional Approach | The CANHEALTH Approach |
+| :--- | :--- | :--- |
+| **Web Tech** | **WordPress:** Highly flexible but technically complex and difficult to maintain. | **Wix:** Simple, intuitive, responsive, and completely ready-to-use out of the box. |
+| **FinTech** | **Enterprise Legacy Systems:** Powerful financial tools that are incredibly difficult, expensive, and slow to manage. | **CANHEALTH:** Enterprise-grade security and financial controls made remarkably simple for healthcare organizations. |
 
 ---
 
-## Seeded Fraud Patterns (Demo)
+## Future Vision & Roadmap
 
-| Pattern | Actor | What to look for |
-|---------|-------|-----------------|
-| Smurfing (72 h cumulative) | Frank Miller | 8 × $49.50 USD across 60 h → $546 CAD > $500 budget |
-| Split billing (collusion) | Frank + Eric Tran | $78 USD each at "Roadside Grill Co" within 28 min |
-| Round-number structuring | Grace Lee | 12 × exact $200/$400/$500 to "Premium Fleet Services Inc" |
-| Statistical outlier (Z > 3) | CFO | $264 K CAD "Intercontinental Fleet Acquisition" |
-| Shell vendor | Grace Lee | "Premium Fleet Services Inc" — new vendor, all round numbers |
+CANHEALTH aims to create a fully connected fraud prevention ecosystem bridging the gaps between healthcare providers, insurance companies, and premier financial institutions.
 
-**FX demo beat:** A $499 USD charge becomes **$688 CAD** and silently breaches the $500
-threshold — caught because all policy checks run on the CAD-normalized amount.
+**Future development milestones include:**
+1. **Direct Insurer Integrations:** Seamless real-time digital handshakes with primary insurers.
+2. **Automated Claims Verification:** Instantaneous validation of services rendered to eliminate adjudication delays.
+3. **Real-Time Fraud Intelligence Sharing:** A decentralized network notifying participants of active exploits.
+4. **Advanced Compliance Monitoring:** Adaptive systems tracking evolving healthcare policies and regulations.
+5. **Predictive Analytics:** Machine learning models engineered to prevent fraud before a transaction is initiated.
 
----
-
-## Design System
-
-The frontend ships with a full dual-theme (light + dark) design token system:
-
-- **Light mode**: Warm paper tones (`#f6f4ee`), deep blue accent (`#0051d5`)
-- **Dark mode**: Binance-inspired (`#0b0e11` base, `#FCD535` gold accent)
-- **Typography**: Inter (UI), JetBrains Mono (financial data), serif (headings)
-- **Theming**: All components use CSS custom properties — the dark mode toggle flips the entire UI instantly
+This ecosystem will allow healthcare providers and insurers to communicate more efficiently, dropping administrative burdens to an absolute minimum and systematically reducing financial loss across the entire Canadian healthcare system.
 
 ---
 
-## License
+## Vision Statement
 
-Private — MPC Hacks 2026.
+> "CANHEALTH is building the definitive financial infrastructure layer for healthcare organizations—combining fraud prevention, financial intelligence, and patient accessibility into a single platform that helps providers get paid, patients receive care, and healthcare businesses grow with confidence."
