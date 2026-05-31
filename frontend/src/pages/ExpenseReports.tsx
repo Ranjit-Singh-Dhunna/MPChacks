@@ -45,6 +45,10 @@ export function ExpenseReports() {
       {/* LEFT PANEL: AI Chat (Light Theme) */}
       <div className="w-[450px] shrink-0 border-r border-slate-200 bg-white flex flex-col p-6 gap-6 relative z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         
+        <div>
+          <div className="section-label">Reporting</div>
+          <h1 className="mt-1 text-3xl font-serif font-medium tracking-tight text-primary">Expense Reports</h1>
+        </div>
 
 
         {/* Suggestions */}

@@ -224,7 +224,7 @@ function CaseDetailPanel({
   const anomaly = getAnomalyDescription(detail);
 
   return (
-    <aside className="border border-outline-variant/60 bg-white">
+    <aside className="border border-outline-variant/60 bg-white sticky top-6 h-[calc(100vh-48px)] overflow-y-auto custom-scrollbar-light">
       <div className="border-b border-outline-variant/50 p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -254,7 +254,7 @@ function CaseDetailPanel({
       <div className="space-y-5 p-5">
         <section>
           <h3 className="section-label">Why this was flagged</h3>
-          <div className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant">
+          <div className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant max-h-48 overflow-y-auto no-scrollbar">
             {anomaly && <p>{anomaly}</p>}
             {reasons.length > 0 && (
               <ul className="space-y-2">
@@ -272,7 +272,7 @@ function CaseDetailPanel({
 
         <section>
           <h3 className="section-label">Related transactions</h3>
-          <div className="mt-3 max-h-[360px] overflow-auto">
+          <div className="mt-3 max-h-[240px] overflow-auto custom-scrollbar-light">
             <TransactionTable transactions={detail.transactions} />
           </div>
         </section>
@@ -389,10 +389,7 @@ export function Violations() {
               <span className="material-symbols-outlined text-[15px]">download</span>
               Export CSV
             </a>
-            <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-secondary/5 border border-secondary/15 px-3 py-2 text-[10px] font-bold text-secondary">
-              <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
-              Scan runs on Analyze
-            </div>
+
           </div>
         </div>
       </div>
@@ -422,19 +419,22 @@ export function Violations() {
 
           {view === "cases" && (
             <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="border border-outline-variant bg-white px-3 py-2 text-xs font-bold text-primary outline-none"
-              >
-                <option value="ACTIVE">Active</option>
-                <option value="OPEN">Open</option>
-                <option value="ESCALATED">Escalated</option>
-                <option value="INFO_REQUESTED">Info requested</option>
-                <option value="REVIEWED">Reviewed</option>
-                <option value="DISMISSED">Dismissed</option>
-                <option value="RESOLVED">Resolved</option>
-              </select>
+              <div className="relative flex items-center">
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="appearance-none border border-outline-variant bg-white pl-4 pr-10 py-2 text-xs font-bold text-primary outline-none"
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="OPEN">Open</option>
+                  <option value="ESCALATED">Escalated</option>
+                  <option value="INFO_REQUESTED">Info requested</option>
+                  <option value="REVIEWED">Reviewed</option>
+                  <option value="DISMISSED">Dismissed</option>
+                  <option value="RESOLVED">Resolved</option>
+                </select>
+                <span className="material-symbols-outlined absolute right-3 pointer-events-none text-[18px] text-primary">expand_more</span>
+              </div>
               <div className="relative">
                 <span className="material-symbols-outlined pointer-events-none absolute left-3 top-2.5 text-[16px] text-on-surface-variant">search</span>
                 <input

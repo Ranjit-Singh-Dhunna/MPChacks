@@ -577,7 +577,7 @@ export function PolicyManager() {
   if (selectedPolicy) {
     return (
       <div className="flex min-h-[95vh] flex-col bg-background text-on-background">
-        <div className="sticky top-0 z-10 border-b border-outline-variant bg-white px-8 py-6">
+        <div className="sticky top-0 z-20 border-b border-outline-variant/60 bg-background px-8 py-5 shadow-sm">
           <button
             onClick={() => setSelectedPolicy(null)}
             className="mb-4 flex items-center gap-1.5 text-xs font-bold text-on-surface-variant transition-colors hover:text-primary"
@@ -738,7 +738,7 @@ export function PolicyManager() {
   if (uploadedPolicies.length === 0) {
     return (
       <div className="flex min-h-[95vh] flex-col bg-background text-on-background">
-        <div className="sticky top-0 z-10 border-b border-outline-variant bg-surface px-8 py-6">
+        <div className="sticky top-0 z-10 border-b border-outline-variant bg-background px-8 py-6">
           <div>
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-secondary">
               Compliance Engine / Policy Rulesets
@@ -785,7 +785,7 @@ export function PolicyManager() {
 
   return (
     <div className="flex min-h-[95vh] flex-col bg-background text-on-background">
-      <div className="sticky top-0 z-10 border-b border-outline-variant bg-surface px-8 py-6">
+      <div className="sticky top-0 z-10 border-b border-outline-variant bg-background px-8 py-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-secondary">
@@ -798,7 +798,7 @@ export function PolicyManager() {
             </p>
           </div>
 
-          <div>
+          <div className="mt-2 lg:mt-6">
             <input
               ref={fileRef}
               type="file"

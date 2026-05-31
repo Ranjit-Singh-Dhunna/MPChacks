@@ -34,7 +34,7 @@ function KPICard({
       onClick={() => to && nav(to)}
     >
       <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{label}</div>
-      <div className="text-4xl font-serif font-normal text-primary tracking-tight mt-2">{value}</div>
+      <div className="text-4xl font-light text-primary tracking-tighter mt-2">{value}</div>
       <div className="text-xs text-on-surface-variant mt-1">{sub}</div>
       {to && (
         <div className="mt-3 flex items-center gap-1 text-[10px] text-secondary font-bold">
@@ -63,7 +63,7 @@ function AIEfficiencyCard({
 
       {/* Headline: actual AI calls */}
       <div className="flex items-end gap-2 mt-2">
-        <div className="text-4xl font-serif font-normal tracking-tight"
+        <div className="text-4xl font-light tracking-tighter"
           style={isDark
             ? { color: "#FCD535" }
             : { background: "linear-gradient(90deg,#7c3aed,#0051d5)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
@@ -186,7 +186,11 @@ export function Dashboard() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* STICKY TOP BAR */}
-      <div className="px-8 py-4 border-b border-outline-variant/65 bg-background sticky top-0 z-20 flex justify-end items-center">
+      <div className="px-8 py-4 border-b border-outline-variant/65 bg-background sticky top-0 z-20 flex justify-between items-center">
+        <div>
+          <div className="section-label">Overview</div>
+          <h1 className="mt-1 text-3xl font-serif font-medium tracking-tight text-primary">Dashboard</h1>
+        </div>
         <div className="flex items-center gap-3">
           {msg && (
             <span className="text-xs text-on-surface-variant max-w-xs truncate">{msg}</span>
@@ -377,7 +381,7 @@ export function Dashboard() {
                     const revPct = total > 0 ? Math.round((data.reviews / total) * 100) : 6;
                     return (
                       <>
-                        <div className="text-5xl font-serif font-normal tracking-tight text-primary">{compPct}%</div>
+                        <div className="text-5xl font-light tracking-tighter text-primary">{compPct}%</div>
                         <div className="mt-2 h-2.5 rounded-full overflow-hidden flex gap-0.5">
                           <div className="h-full rounded-l-full bg-green-500" style={{ width: `${compPct}%` }} />
                           <div className="h-full bg-error" style={{ width: `${violPct}%` }} />

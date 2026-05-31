@@ -287,7 +287,7 @@ export function ReportPreview({ report }: { report: AIReportResponse }) {
 
   return (
     <div className="flex h-full flex-col items-center overflow-hidden bg-transparent p-4 lg:p-12">
-      <div className="mb-6 flex w-full max-w-[850px] justify-end">
+      <div className="-mt-4 mb-6 flex w-full max-w-[850px] justify-end lg:-mt-6">
         <button
           onClick={() => exportElementToPDF("report-pdf-content", report.report_title || "Expense_Report")}
           className="flex items-center gap-2 bg-blue-600 px-5 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20 disabled:opacity-60 rounded-lg"
