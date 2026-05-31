@@ -8,13 +8,34 @@ from policy.evaluator import SEVERITY_ORDER, PolicyResult, RuleResult
 
 
 class RuleEngine:
+    """The Tier-1 deterministic Policy Rule Engine.
+    
+    Evaluates corporate card transactions against active corporate policy rules
+    with zero external AI dependencies. All monetary checks are calculated in CAD
+    to eliminate FX-evasion vulnerabilities.
+    """
     def __init__(self, rules: list[Policy]):
+        """Initializes the rule engine with a active list of policy rules."""
         self.rules = [r for r in rules if r.is_active]
 
     def check_transaction(
         self, txn: Transaction, employee: Employee | None = None,
         month_spend_cad: float = 0.0,
     ) -> PolicyResult:
+        """Applies all active rules to a transaction and classifies the result.
+        
+        Evaluates rules sequentially. If any rule triggers a violation, it maps
+        the transaction to either a hard 'VIOLATION' (if the severity level is HIGH or
+        CRITICAL) or a warning 'REVIEW' (if the severity is LOW or MEDIUM).
+        
+        Args:
+            txn (Transaction): The transaction model instance to check.
+            employee (Employee, optional): The associated employee model instance.
+            month_spend_cad (float, optional): The month-to-date spending (CAD) before this transaction.
+
+        Returns:
+            PolicyResult: Result object containing compliant/review/violation status, worst severity, and reasons.
+        """
         violations: list[RuleResult] = []
         for rule in self.rules:
             res = self._apply(rule, txn, employee, month_spend_cad)
@@ -25,7 +46,7 @@ class RuleEngine:
             return PolicyResult(flag="COMPLIANT")
 
         worst = max(violations, key=lambda v: SEVERITY_ORDER.get(v.severity, 0))
-        # MEDIUM/LOW-only violations are flagged for human REVIEW rather than hard VIOLATION
+        # HIGH (3) or CRITICAL (4) violations escalate to hard VIOLATION, while LOW/MEDIUM remain REVIEW
         flag = "VIOLATION" if SEVERITY_ORDER.get(worst.severity, 0) >= 3 else "REVIEW"
         return PolicyResult(
             flag=flag,

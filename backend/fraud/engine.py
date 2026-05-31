@@ -17,6 +17,17 @@ from config import settings
 
 @dataclass
 class FraudFlag:
+    """Represents a flagged fraud or anomaly pattern detected in transaction data.
+    
+    Fields:
+        pattern_type (str): The unique key matching the specific detector (e.g., 'SMURFING', 'SPLIT_BILLING').
+        transaction_ids (list[str]): The IDs of all transactions that triggered this flag.
+        employee_names (list[str]): The names of employees associated with these transactions.
+        severity (str): The calculated severity of this anomaly ('CRITICAL', 'HIGH', 'MEDIUM', 'LOW').
+        total_amount_cad (float): The combined CAD exposure value for the flagged transactions.
+        description (str): A user-friendly, human-readable description of the warning and evidence.
+        extra (dict): Arbitrary metadata mapping metrics like p-values, Z-scores, HHI index or historical baselines.
+    """
     pattern_type: str
     transaction_ids: list[str]
     employee_names: list[str]
@@ -28,6 +39,20 @@ class FraudFlag:
 
 @dataclass
 class EmployeeRiskProfile:
+    """Represents the composite credit/spend risk status for an individual employee.
+    
+    Fields:
+        employee_id (str): The unique identifier of the employee.
+        employee_name (str): The full name of the employee.
+        department (str): The operational business unit or department.
+        composite_score (int): The weighted aggregate risk score, scaled 0 to 100.
+        risk_tier (str): Categorical risk level ('CRITICAL', 'HIGH', 'MEDIUM', 'LOW').
+        signal_breakdown (dict): Dictionary mapping individual signal scores and description details.
+        top_signals (list[str]): Bullet points summarizing the top active risk indicators.
+        transaction_count (int): The total number of transactions processed for this employee.
+        total_spend_cad (float): Cumulative CAD expenditure for the employee during the period.
+        flags_count (int): The count of active fraud flags referencing this employee.
+    """
     employee_id: str
     employee_name: str
     department: str
@@ -535,19 +560,32 @@ def build_risk_profiles(
     flags: list[FraudFlag],
     policy_violation_counts: dict[str, int] | None = None,
 ) -> list[EmployeeRiskProfile]:
-    """Build a composite risk profile for every employee in the dataset."""
+    """Builds a composite risk profile for each employee based on multiple fraud signals.
+    
+    This function compiles signals from deterministic violations and statistical anomalies.
+    It rates risk on a 0-100 scale using a weighted average. To prevent score deflation,
+    only actively triggered signals are factored into the calculation.
+
+    Args:
+        df (pd.DataFrame): The complete historical transaction table.
+        flags (list[FraudFlag]): The active list of fraud clusters/flags detected.
+        policy_violation_counts (dict[str, int], optional): Map of employee_id to policy violation counts.
+
+    Returns:
+        list[EmployeeRiskProfile]: A list of completed risk profiles sorted by composite score descending.
+    """
     if df.empty:
         return []
 
     policy_violation_counts = policy_violation_counts or {}
 
-    # Index flags by employee name
+    # Index flags by employee name for fast lookup during aggregation
     emp_flags: dict[str, list[FraudFlag]] = {}
     for f in flags:
         for name in f.employee_names:
             emp_flags.setdefault(name, []).append(f)
 
-    # Build lookup: employee_name -> employee_id, department
+    # Build lookup metadata table mapping: employee_name -> (employee_id, department)
     emp_meta = (
         df.groupby("employee_name")
         .agg(employee_id=("employee_id", "first"), department=("department", "first"))
@@ -559,23 +597,31 @@ def build_risk_profiles(
     for emp_name, meta in emp_meta.items():
         emp_id = meta["employee_id"]
         dept = meta["department"]
+        
+        # Filter transactions matching this individual employee
         emp_df = df[df["employee_id"] == emp_id]
         txn_count = len(emp_df)
         total_spend = float(emp_df["amount_cad"].sum())
         my_flags = emp_flags.get(emp_name, [])
         flags_count = len(my_flags)
 
+        # Dictionary to store score (0-100) and details for triggered risk signals
         signals: dict[str, dict] = {}
 
-        # 1. Cluster involvement
+        # ---------------------------------------------------------
+        # Signal 1: Transaction Cluster/Fraud Pattern Involvement
+        # ---------------------------------------------------------
         cluster_types = {f.pattern_type for f in my_flags
                          if f.pattern_type in ("SMURFING", "SPLIT_BILLING", "STRUCTURING",
                                                "OUTLIER", "SHELL_VENDOR", "DUPLICATE_EXPENSE")}
         cluster_severities = [f.severity for f in my_flags
                               if f.pattern_type in cluster_types]
         if cluster_severities:
+            # Map worst severity level to baseline points
             worst = max(cluster_severities, key=lambda s: SEVERITY_SCORE.get(s, 0))
             score = SEVERITY_SCORE.get(worst, 40)
+            
+            # Apply additive penalties for involvement in multiple discrete patterns
             if len(cluster_types) >= 3:
                 score = min(100, score + 20)
             elif len(cluster_types) >= 2:
@@ -586,7 +632,9 @@ def build_risk_profiles(
                 "detail": f"Involved in {len(cluster_types)} fraud pattern(s): {patterns}",
             }
 
-        # 2. Benford deviation
+        # ---------------------------------------------------------
+        # Signal 2: Benford's Law Digit Distribution Failure
+        # ---------------------------------------------------------
         benford_flags = [f for f in my_flags if f.pattern_type == "BENFORDS_VIOLATION"]
         if benford_flags:
             p_val = benford_flags[0].extra.get("p_value", 1.0)
@@ -603,7 +651,9 @@ def build_risk_profiles(
                 "detail": f"Expense digit distribution fails Benford's Law (p={p_val:.4f})",
             }
 
-        # 3. Velocity spike
+        # ---------------------------------------------------------
+        # Signal 3: Velocity Spike (Personal Weekly Spending Baseline)
+        # ---------------------------------------------------------
         velocity_flags = [f for f in my_flags if f.pattern_type == "VELOCITY_SPIKE"]
         if velocity_flags:
             max_z = max(f.extra.get("velocity_z", 0) for f in velocity_flags)
@@ -614,7 +664,9 @@ def build_risk_profiles(
                     "detail": f"Spending velocity {max_z:.1f}σ above personal baseline",
                 }
 
-        # 4. Policy violation rate
+        # ---------------------------------------------------------
+        # Signal 4: Policy Violation Rate (% of non-compliant spend)
+        # ---------------------------------------------------------
         viol_count = policy_violation_counts.get(emp_id, 0)
         if txn_count > 0 and viol_count > 0:
             rate = viol_count / txn_count
@@ -631,7 +683,9 @@ def build_risk_profiles(
                 "detail": f"{viol_count}/{txn_count} transactions ({rate:.0%}) violate policy",
             }
 
-        # 5. Peer deviation
+        # ---------------------------------------------------------
+        # Signal 5: Department Peer Group Deviation (Total Spend Z-Score)
+        # ---------------------------------------------------------
         peer_flags = [f for f in my_flags if f.pattern_type == "PEER_ANOMALY"]
         if peer_flags:
             peer_z = max(f.extra.get("peer_z", 0) for f in peer_flags)
@@ -642,7 +696,9 @@ def build_risk_profiles(
                     "detail": f"Total spend {peer_z:.1f}σ above {dept} department average",
                 }
 
-        # 6. Merchant concentration
+        # ---------------------------------------------------------
+        # Signal 6: Merchant Concentration (HHI Index Allocation)
+        # ---------------------------------------------------------
         conc_flags = [f for f in my_flags if f.pattern_type == "MERCHANT_CONCENTRATION"]
         if conc_flags:
             hhi = max(f.extra.get("hhi_score", 0) for f in conc_flags)
@@ -661,8 +717,11 @@ def build_risk_profiles(
                 "detail": f"{top_pct:.0%} of spend directed to {top_m} (HHI={hhi:.2f})",
             }
 
+        # ---------------------------------------------------------
         # Composite score calculation (weighted average of active signals)
+        # ---------------------------------------------------------
         if signals:
+            # sum active weights to dynamically scale denominator (prevents dilution)
             total_weight = sum(SIGNAL_WEIGHTS.get(k, 0.1) for k in signals)
             weighted_sum = sum(
                 signals[k]["score"] * SIGNAL_WEIGHTS.get(k, 0.1) for k in signals
