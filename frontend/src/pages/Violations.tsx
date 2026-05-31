@@ -79,28 +79,6 @@ function SeverityBadge({ severity }: { severity: Severity }) {
   );
 }
 
-function SummaryMetric({
-  label,
-  value,
-  icon,
-  tone = "default",
-}: {
-  label: string;
-  value: string | number;
-  icon: string;
-  tone?: "default" | "danger" | "warning";
-}) {
-  const toneClass = tone === "danger" ? "text-error" : tone === "warning" ? "text-amber-700" : "text-primary";
-  return (
-    <div className="border-r border-outline-variant/50 px-5 py-4 last:border-r-0">
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-        <span className={`material-symbols-outlined text-[16px] ${toneClass}`}>{icon}</span>
-        {label}
-      </div>
-      <div className={`mt-2 text-4xl font-serif font-normal tracking-tight ${toneClass}`}>{value}</div>
-    </div>
-  );
-}
 
 function getPolicyReasons(caseDetail: ComplianceCase | ComplianceCaseDetail): string[] {
   const evidence = caseDetail.evidence as { policy_reasons?: unknown };
