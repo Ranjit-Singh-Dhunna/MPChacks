@@ -60,6 +60,7 @@ graph TD
   2. Sorts chronological transactions for each employee.
   3. Uses a rolling time-window (default: 72 hours).
   4. Triggers if the cumulative sum exceeds a material threshold (default: $500 CAD) and involves $\ge 4$ distinct transactions.
+* **Example**: An employee makes 8 separate purchases of $49.50 over a single weekend to bypass the $50 manager pre-authorization limit, totaling $396.
 
 ### 2. Split Billing (`detect_split_billing`)
 * **Objective**: Identifies situations where two different employees split a single high-value bill into separate company cards to avoid limit constraints.
@@ -68,6 +69,7 @@ graph TD
   2. Compares pairs of transactions occurring within a rolling window (default: 30 minutes).
   3. Verifies that the employees are different.
   4. Checks that transaction amounts are near-identical (within ±$2.50 USD tolerance) and above a material floor (default: $40.00 USD).
+* **Example**: Frank and Eric both charge $78 to "Roadside Grill" 28 minutes apart because the actual single bill was $156, and their individual meal limit is $100.
 
 ### 3. Structuring (`detect_structuring`)
 * **Objective**: Detects merchant payments deliberately partitioned to evade granular approval flows.
@@ -75,6 +77,7 @@ graph TD
   1. Filters transactions that are exact round numbers (e.g., $200, $400, $500, with a ±$1 tolerance).
   2. Groups by merchant.
   3. Triggers a high-severity flag if any single merchant receives $\ge 5$ round-number transactions during the period.
+* **Example**: An employee submits 12 different charges for exactly $200, $400, or $500 to a consulting firm, indicating fabricated or artificially split payments.
 
 ### 4. Z-Score Outliers (`detect_zscore_outliers`)
 * **Objective**: Statistically highlights anomalous transaction amounts within specific merchant categories.
@@ -84,6 +87,7 @@ graph TD
   3. Calculates the Z-score for each transaction amount $x$:
      $$Z = \frac{x - \mu}{\sigma}$$
   4. Flags transactions exceeding a threshold (default: $Z > 5.0$) with a material floor of $300 CAD.
+* **Example**: The average cost for MCC 5812 (Restaurants) is $65. An employee submits a single $4,500 restaurant charge, creating an extreme Z-score outlier.
 
 ### 5. Shell Vendors (`detect_shell_vendors`)
 * **Objective**: Catches potential employee-owned or fictitious shell companies injected into the vendor stream.
@@ -91,6 +95,7 @@ graph TD
   1. Targets new vendors (first transaction within the last 45 days).
   2. Evaluates the ratio of round-number charges ($100, $200, $400, $500).
   3. Triggers if a new vendor has $\ge 3$ transactions and $\ge 80\%$ of them are round numbers.
+* **Example**: A brand-new merchant called "Premium Fleet Services" appears this month, and 100% of its charges are for exactly $200 and $400.
 
 ### 6. Benford's Law (`detect_benfords_law`)
 * **Objective**: Applies standard forensic accounting tests to discover fabricated or manipulated expense claims.
@@ -101,6 +106,7 @@ graph TD
      $$P(d) = \log_{10}\left(1 + \frac{1}{d}\right)$$
   4. Computes the Chi-squared test statistic ($\chi^2$) and p-value.
   5. Flags the employee if $p < 0.01$ (statistically significant deviation), highlighting the most deviant digit.
+* **Example**: In a natural dataset, expenses starting with '1' should occur ~30% of the time, and '9' ~4% of the time. If an employee submits 50 expenses and 40% of them start with '9' (e.g. $99, $95, $900), the test flags the unnatural human fabrication.
 
 ### 7. Velocity Spike (`detect_velocity_anomalies`)
 * **Objective**: Flags abnormal surges in transaction frequency and volume.
@@ -110,6 +116,7 @@ graph TD
   3. Establishes a historical personal baseline (excluding the final week).
   4. Computes the mean and standard deviation of historical weekly spends.
   5. Flags a velocity spike if the most recent weekly spend exceeds the baseline by $Z > 3.0$ and is above $500 CAD.
+* **Example**: An employee who typically spends $150 a week on supplies suddenly spends $3,500 in a single week, severely breaking their normal velocity.
 
 ### 8. Duplicate Expenses (`detect_duplicate_expenses`)
 * **Objective**: Identifies double-billing or copy-pasted receipt submissions by the same employee.
@@ -117,6 +124,7 @@ graph TD
   1. Identifies transactions by the same employee at the same merchant.
   2. Compares amounts within a rolling window (default: 7 days) above a material floor ($40 USD).
   3. Flags identical amounts (with a 0\% variance tolerance) as highly suspicious duplicate submissions.
+* **Example**: A user submits a $142.50 expense to "Delta Airlines" on Monday, and then submits another $142.50 expense to "Delta Airlines" on Wednesday, reusing the same receipt.
 
 ### 9. Peer Anomalies (`detect_peer_anomalies`)
 * **Objective**: Detects employees whose aggregate spend is a statistical outlier compared to colleagues in the same business unit.
@@ -125,6 +133,7 @@ graph TD
   2. Summarizes total expenditure (CAD) per employee within their department.
   3. Calculates the department mean and standard deviation (requires $\ge 3$ department members).
   4. Flags employees whose personal total spend exhibits a high Z-score ($Z > 0.8$) relative to department peers.
+* **Example**: The Engineering department averages $1,200 in monthly expenses per person, but one specific engineer claims $8,500 for the month, standing out strongly from their peers.
 
 ### 10. Merchant Concentration (`detect_merchant_concentration`)
 * **Objective**: Pinpoints vendor favoritism, potential kickback schemes, or card abuse at a single vendor.
@@ -134,6 +143,7 @@ graph TD
      $$HHI = \sum_{i=1}^{N} s_i^2$$
      where $s_i$ is the share of the employee's total CAD spend directed to merchant $i$.
   3. Flags an anomaly if $HHI > 0.4$ (extreme concentration), meaning a massive portion of total spend goes to a single supplier.
+* **Example**: An employee makes purchases from 15 different merchants, but funnels 85% of their total $25,000 budget to a single unapproved catering vendor, indicating a potential kickback scheme.
 
 ---
 

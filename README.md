@@ -13,7 +13,7 @@ or anomalous — it never calculates.
 |---|---------|-------------|
 | 1 | **Talk to Your Data** | Natural-language queries → charts, tables, and voice summaries (ElevenLabs). Chain-of-trust shows whether the answer came from deterministic logic or AI. |
 | 2 | **Policy Compliance Engine** | Upload a PDF policy → AI extracts editable rules → deterministic per-transaction checks with severity levels. |
-| 3 | **Fraud Cluster Detection** | Five pure-pandas detectors (smurfing, split billing, structuring, outlier, shell vendor) with optional Gemini narrative on CRITICAL/HIGH clusters. |
+| 3 | **Fraud Cluster Detection** | Ten pure-pandas detectors (smurfing, split billing, structuring, outlier, shell vendor, Benford's law, velocity spike, duplicate expense, peer anomaly, merchant concentration) with optional Gemini narrative on CRITICAL/HIGH clusters. |
 | 4 | **AI Pre-Approval Workflow** | Dossier-first approval queue — confidence gauge, AI recommendation, risk/mitigating factors, policy compliance, and budget utilization are shown for every pending transaction. |
 | 5 | **Automated Expense Reports** | Auto-grouped, policy-checked reports with AI executive summaries and PDF export. |
 | 6 | **Compliance Case Management** | Cases auto-generated from fraud clusters and violations. Escalate, request info, dismiss, or add notes with a full audit trail. |
@@ -32,6 +32,18 @@ POST /api/analyze → fraud/pipeline.py
                 ↓
 compliance/cases.py → ComplianceCase rows (audit queue)
 ```
+
+### Fraud Detection Justification
+Brim's `engine.py` implements a 10-detector deterministic and statistical pipeline instead of relying solely on an LLM for fraud detection. 
+This is because expense fraud is often numerical and systemic, which LLMs struggle to catch reliably across thousands of rows without hallucinating or missing strict mathematical conditions. 
+Our pandas-based engine targets 10 unique "kill zones"—classes of fraud that require specialized logical or statistical evaluation:
+- **Smurfing / Structuring**: Circumvents hard limits via multiple smaller charges. Requires historical windowing.
+- **Split Billing / Duplicate Expenses**: Identifies deliberate cost-splitting across employees or copy-pasted receipts.
+- **Statistical Outliers / Peer Anomalies**: Flags extreme variations within an MCC or department using Z-scores.
+- **Benford's Law**: A Big 4 forensic accounting standard. Proves fabrication if an employee's expense amounts deviate from the expected logarithmic digit distribution.
+- **Velocity Spikes**: Compares current spending frequency and volume against a personalized rolling historical baseline.
+- **Merchant Concentration (HHI) / Shell Vendors**: Uses Herfindahl-Hirschman Index and vendor age to catch kickback schemes or employee-owned shell companies.
+By computing these deterministically, the engine guarantees 100% auditable, hallucination-free compliance, reserving LLMs strictly for plain-english summarization (Tier 3).
 
 ## Tech Stack
 
