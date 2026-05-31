@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EmployeeResponse(BaseModel):
@@ -80,11 +80,22 @@ class PolicyResponse(BaseModel):
     source_text: Optional[str] = None
 
 
+class PolicyCreate(BaseModel):
+    rule_name: str
+    rule_type: str
+    rule_parameters: dict = Field(default_factory=dict)
+    severity: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"] = "MEDIUM"
+    is_active: bool = True
+    source_text: Optional[str] = None
+
+
 class PolicyUpdate(BaseModel):
     rule_name: Optional[str] = None
+    rule_type: Optional[str] = None
     rule_parameters: Optional[dict] = None
     severity: Optional[str] = None
     is_active: Optional[bool] = None
+    source_text: Optional[str] = None
 
 
 class PolicyUploadResult(BaseModel):

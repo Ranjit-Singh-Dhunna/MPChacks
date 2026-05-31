@@ -46,8 +46,14 @@ export const postQuery = (question: string, voice: boolean, session_id = "defaul
 export const getRules = () =>
   api.get<Policy[]>("/policy/rules").then((r) => r.data);
 
+export const createRule = (data: Omit<Policy, "policy_id">) =>
+  api.post<Policy>("/policy/rules", data).then((r) => r.data);
+
 export const updateRule = (id: number, data: Partial<Policy>) =>
   api.put<Policy>(`/policy/rules/${id}`, data).then((r) => r.data);
+
+export const deleteRule = (id: number) =>
+  api.delete(`/policy/rules/${id}`).then((r) => r.data);
 
 export const uploadPolicy = (file: File) => {
   const fd = new FormData();
