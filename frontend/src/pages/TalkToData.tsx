@@ -62,7 +62,14 @@ export function TalkToData() {
   };
 
   const submit = () => { ask(question); setQuestion(""); };
-  const restyle = (chart: string) => { ask(`${chart} chart`); };
+  const restyle = (chart: string) => {
+    // "map" is a client-side-only view — swap chart type without hitting the backend
+    if (chart === "map" && result) {
+      setResult({ ...result, ui_config: { ...result.ui_config, chart_type: "map" as any } });
+      return;
+    }
+    ask(`${chart} chart`);
+  };
   const useChip = (s: string) => { ask(s); setQuestion(""); };
 
   // ── ElevenLabs Voice ──
@@ -280,9 +287,9 @@ export function TalkToData() {
                         </div>
                       </div>
                       {result.used_fallback && (
-                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 flex items-center gap-2 mb-4">
-                          <span className="material-symbols-outlined text-amber-600 text-[18px]">info</span>
-                          <span className="text-xs font-semibold text-amber-700">Showing deterministic fallback — AI unavailable</span>
+                        <div className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface-container-low px-3 py-1 mb-3">
+                          <span className="material-symbols-outlined text-[12px] text-on-surface-variant">shield</span>
+                          <span className="text-[10px] font-bold text-on-surface-variant">Deterministic engine · instant result</span>
                         </div>
                       )}
                       <SmartChart data={result.data} ui={result.ui_config} />

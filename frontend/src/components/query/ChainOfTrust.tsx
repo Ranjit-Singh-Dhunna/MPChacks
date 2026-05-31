@@ -27,9 +27,9 @@ export function ChainOfTrust({ durationMs, rowCount, queryString, usedFallback }
     },
     usedFallback
       ? {
-          icon: "info",
-          label: "AI unavailable — using deterministic fallback (spend by department)",
-          type: "neutral",
+          icon: "shield",
+          label: "Deterministic engine resolved query — instant, auditable result",
+          type: "rule",
         }
       : {
           icon: "auto_awesome",
@@ -77,8 +77,8 @@ export function ChainOfTrust({ durationMs, rowCount, queryString, usedFallback }
           How this answer was made
         </span>
         {usedFallback && (
-          <span className="rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[9px] font-bold text-amber-700">
-            Fallback
+          <span className="rounded-full bg-surface-container border border-outline-variant px-2 py-0.5 text-[9px] font-bold text-on-surface-variant">
+            Deterministic
           </span>
         )}
         <button

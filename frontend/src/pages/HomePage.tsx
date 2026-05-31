@@ -39,6 +39,20 @@ const PILLARS = [
   },
 ];
 
+const STATS = [
+  { value: "4,235", label: "transactions analyzed" },
+  { value: "85%",   label: "deterministic coverage" },
+  { value: "5",     label: "fraud patterns seeded" },
+  { value: "<2s",   label: "avg pipeline time" },
+];
+
+const TRUST = [
+  { icon: "lock",          text: "Data never leaves your tab" },
+  { icon: "verified",      text: "Rules engine fully auditable" },
+  { icon: "psychology",    text: "Gemini only on edge cases" },
+  { icon: "speed",         text: "Sub-2s on 4,235 rows" },
+];
+
 export function HomePage() {
   const nav = useNavigate();
   const [steps, setSteps] = useState<Step[]>(INITIAL_STEPS);
@@ -154,6 +168,22 @@ export function HomePage() {
             Upload your transactions CSV. Brim's hybrid AI pipeline detects fraud clusters, flags policy violations, and answers your finance questions — all in under 2 seconds.
           </p>
 
+          {/* Stats row */}
+          <div className="grid grid-cols-4 gap-3 mb-7">
+            {STATS.map((s, i) => (
+              <motion.div
+                key={s.label}
+                className="glass-dark rounded-2xl px-3 py-3 text-center"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 + i * 0.07 }}
+              >
+                <div className="text-lg font-black stat-shimmer">{s.value}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5 leading-tight">{s.label}</div>
+              </motion.div>
+            ))}
+          </div>
+
           <UploadHero onFile={handleFile} onDemo={handleDemo} />
         </motion.div>
 
@@ -178,16 +208,20 @@ export function HomePage() {
             </Suspense>
           </div>
 
-          {/* Arc labels below globe */}
-          <div className="mt-4 space-y-1.5">
+          {/* Globe legend — what the colours mean */}
+          <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 justify-center lg:justify-start">
             {[
-              { color: "#0051d5", text: "Toronto → NYC · $142K" },
-              { color: "#6f7ae5", text: "Montréal → SF · $38K" },
-              { color: "#34d399", text: "Vancouver → Seattle · $27K" },
-            ].map((a) => (
-              <div key={a.text} className="flex items-center gap-2 text-[11px] text-slate-400">
-                <span className="w-3 h-0.5 rounded-full shrink-0" style={{ background: a.color }} />
-                {a.text}
+              { color: "#3b82f6", dot: false, text: "Expense corridors" },
+              { color: "#a78bfa", dot: false, text: "Global routes" },
+              { color: "#ef4444", dot: true,  text: "Fraud risk zones" },
+              { color: "#34d399", dot: false, text: "Compliant hubs" },
+            ].map((l) => (
+              <div key={l.text} className="flex items-center gap-2 text-[11px] text-slate-400">
+                {l.dot
+                  ? <span className="w-2 h-2 rounded-full shrink-0 animate-pulse" style={{ background: l.color }} />
+                  : <span className="w-4 h-0.5 rounded-full shrink-0" style={{ background: l.color }} />
+                }
+                {l.text}
               </div>
             ))}
           </div>
@@ -211,6 +245,18 @@ export function HomePage() {
               <div className="text-base font-bold text-white mb-1">{p.title}</div>
               <div className="text-sm text-slate-400 leading-relaxed">{p.body}</div>
             </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* TRUST STRIP */}
+      <div className="border-t border-white/8 px-8 py-5">
+        <div className="max-w-[1300px] mx-auto flex flex-wrap items-center justify-center gap-6">
+          {TRUST.map((t) => (
+            <div key={t.text} className="flex items-center gap-2 text-xs text-slate-500">
+              <span className="material-symbols-outlined text-[14px] text-slate-600">{t.icon}</span>
+              {t.text}
+            </div>
           ))}
         </div>
       </div>

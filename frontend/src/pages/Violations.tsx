@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from "recharts";
+import {
   complianceExportUrl,
+  getClusters,
   getComplianceCase,
   getComplianceCases,
   getComplianceOverview,
   getComplianceViolations,
   updateComplianceCase,
 } from "../api/client";
+import { ClusterCard } from "../components/fraud/ClusterCard";
 import { useAsync } from "../hooks/useAsync";
 import { cadPrecise, dateTime } from "../lib/format";
 import type {
@@ -16,9 +21,10 @@ import type {
   ComplianceCaseStatus,
   Severity,
   Transaction,
+  FraudCluster,
 } from "../types";
 
-type View = "cases" | "violations";
+type View = "cases" | "violations" | "patterns" | "timeline";
 type CaseAction = "MARK_REVIEWED" | "ESCALATE" | "REQUEST_INFO" | "DISMISS_FALSE_POSITIVE" | "ADD_NOTE";
 
 const SEVERITY_ORDER: Record<Severity, number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
@@ -363,7 +369,8 @@ export function Violations() {
     () => getComplianceCases({ status, search: search.trim() || undefined, limit: 150 }),
     [status, search]
   );
-  const violations = useAsync(() => getComplianceViolations({ size: 100 }), []);
+  const violations = useAsync(() => getComplianceViolations({ size: 1000 }), []);
+  const clusters = useAsync(getClusters, []);
 
   const sortedCases = useMemo(() => {
     return [...(cases.data ?? [])].sort((a, b) => {
@@ -372,6 +379,27 @@ export function Violations() {
       return b.risk_score - a.risk_score;
     });
   }, [cases.data]);
+
+  const clusterGroups = useMemo(() => {
+    if (!clusters.data) return [];
+    return [...clusters.data].sort((a, b) => b.risk_score - a.risk_score);
+  }, [clusters.data]);
+
+  const timelineData = useMemo(() => {
+    if (!violations.data?.transactions) return [];
+    const map = new Map<string, { date: string; count: number; amount: number }>();
+    violations.data.transactions.forEach((txn) => {
+      const dateKey = new Date(txn.transaction_date).toLocaleDateString("en-CA", {
+        month: "short",
+        day: "numeric",
+      });
+      const entry = map.get(dateKey) ?? { date: dateKey, count: 0, amount: 0 };
+      entry.count += 1;
+      entry.amount += txn.amount_cad;
+      map.set(dateKey, entry);
+    });
+    return [...map.values()].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [violations.data]);
 
   useEffect(() => {
     if (!selectedCaseId && sortedCases[0]) setSelectedCaseId(sortedCases[0].case_id);
@@ -424,7 +452,7 @@ export function Violations() {
         </section>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex bg-surface-container-low p-1">
+          <div className="flex bg-surface-container-low p-1 rounded-full overflow-hidden">
             <button
               onClick={() => setView("cases")}
               className={`px-4 py-2 text-xs font-black ${view === "cases" ? "bg-secondary text-white" : "text-on-surface-variant"}`}
@@ -436,6 +464,18 @@ export function Violations() {
               className={`px-4 py-2 text-xs font-black ${view === "violations" ? "bg-secondary text-white" : "text-on-surface-variant"}`}
             >
               Policy violations ({violations.data?.total ?? 0})
+            </button>
+            <button
+              onClick={() => setView("patterns")}
+              className={`px-4 py-2 text-xs font-black ${view === "patterns" ? "bg-secondary text-white" : "text-on-surface-variant"}`}
+            >
+              Patterns
+            </button>
+            <button
+              onClick={() => setView("timeline")}
+              className={`px-4 py-2 text-xs font-black ${view === "timeline" ? "bg-secondary text-white" : "text-on-surface-variant"}`}
+            >
+              Timeline
             </button>
           </div>
 
@@ -467,7 +507,7 @@ export function Violations() {
           )}
         </div>
 
-        {view === "cases" ? (
+        {view === "cases" && (
           <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(520px,0.8fr)]">
             <section className="space-y-3">
               {cases.loading && <div className="border border-outline-variant/60 bg-white p-6 text-sm text-on-surface-variant">Loading compliance cases...</div>}
@@ -489,10 +529,141 @@ export function Violations() {
             </section>
             <CaseDetailPanel caseId={selectedCaseId} onUpdated={reloadAll} />
           </div>
-        ) : (
+        )}
+
+        {view === "violations" && (
           <section className="mt-5">
             {violations.loading && <div className="border border-outline-variant/60 bg-white p-6 text-sm text-on-surface-variant">Loading violations...</div>}
             {violations.data && <TransactionTable transactions={violations.data.transactions} />}
+          </section>
+        )}
+
+        {view === "patterns" && (
+          <section className="mt-5">
+            {clusters.loading && (
+              <div className="border border-outline-variant/60 bg-white p-6 text-sm text-on-surface-variant">
+                Loading fraud clusters…
+              </div>
+            )}
+            {!clusters.loading && clusterGroups.length === 0 && (
+              <div className="border border-outline-variant/60 bg-white p-10 text-center">
+                <span className="material-symbols-outlined text-[40px] text-on-surface-variant mb-3 block">hub</span>
+                <h2 className="text-base font-black text-primary">No fraud patterns detected yet</h2>
+                <p className="mt-2 text-sm text-on-surface-variant">Run Ingest + Analyze from the Dashboard to detect fraud clusters.</p>
+              </div>
+            )}
+            {clusterGroups.length > 0 && (
+              <>
+                {/* Cluster summary bar */}
+                <div className="mb-5 flex flex-wrap gap-3">
+                  {clusterGroups.map((c) => (
+                    <div
+                      key={c.cluster_id}
+                      className={`flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold ${
+                        c.severity === "CRITICAL"
+                          ? "border-error/30 bg-error-container/20 text-error"
+                          : c.severity === "HIGH"
+                          ? "border-orange-200 bg-orange-50 text-orange-700"
+                          : "border-amber-200 bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${
+                        c.severity === "CRITICAL" ? "bg-error animate-pulse" :
+                        c.severity === "HIGH" ? "bg-orange-500" : "bg-amber-400"
+                      }`} />
+                      {c.pattern_type.replace(/_/g, " ")} — {c.transaction_ids.length} txns
+                    </div>
+                  ))}
+                </div>
+
+                {/* Cluster cards grid */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                  {clusterGroups.map((cluster, i) => {
+                    // Match transactions to this cluster
+                    const clusterTxns = (violations.data?.transactions ?? []).filter((t) =>
+                      cluster.transaction_ids.includes(t.transaction_id)
+                    );
+                    return (
+                      <ClusterCard
+                        key={cluster.cluster_id}
+                        cluster={cluster}
+                        index={i}
+                        transactions={clusterTxns}
+                        onViewTransactions={() => setView("violations")}
+                      />
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {view === "timeline" && (
+          <section className="mt-5 space-y-5">
+            {violations.loading && (
+              <div className="border border-outline-variant/60 bg-white p-6 text-sm text-on-surface-variant">
+                Loading timeline data…
+              </div>
+            )}
+            {timelineData.length > 0 && (
+              <div className="card p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <div className="section-label">Violation Timeline</div>
+                    <div className="text-base font-bold text-primary mt-0.5">
+                      Daily violation count &amp; exposure
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px] text-on-surface-variant">
+                    <span className="flex items-center gap-1">
+                      <span className="w-3 h-0.5 bg-error inline-block rounded" />Count
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-3 h-0.5 bg-secondary inline-block rounded" />Amount
+                    </span>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <AreaChart data={timelineData}>
+                    <defs>
+                      <linearGradient id="amtGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#0051d5" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#0051d5" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="2 4" stroke="#f1f3f4" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#45464d" }} stroke="none" />
+                    <YAxis tick={{ fontSize: 11, fill: "#45464d" }} stroke="none" />
+                    <Tooltip
+                      contentStyle={{ background: "#fff", border: "1px solid #c6c6cd", borderRadius: 12, fontSize: 12 }}
+                    />
+                    <Area type="monotone" dataKey="amount" stroke="#0051d5" strokeWidth={2} fill="url(#amtGrad)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {timelineData.length > 0 && (
+              <div className="card p-6">
+                <div className="section-label mb-4">Daily Violation Count</div>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={timelineData}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="#f1f3f4" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#45464d" }} stroke="none" />
+                    <YAxis tick={{ fontSize: 11, fill: "#45464d" }} stroke="none" />
+                    <Tooltip
+                      contentStyle={{ background: "#fff", border: "1px solid #c6c6cd", borderRadius: 12, fontSize: 12 }}
+                    />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                      {timelineData.map((_, i) => (
+                        <Cell key={i} fill={timelineData[i].count > 3 ? "#ba1a1a" : "#0051d5"} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </section>
         )}
       </main>
