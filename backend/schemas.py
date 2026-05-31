@@ -344,3 +344,4 @@ class AIReportResponse(BaseModel):
     total_spend: float
     executive_summary: str
     groups: list[ReportGroup]
+    latex_source: str = ""

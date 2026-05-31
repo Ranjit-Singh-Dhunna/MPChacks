@@ -16,7 +16,7 @@ const SUGGESTIONS = [
   "Pending approvals by risk score",
 ];
 
-const CHART_TYPES = ["bar", "line", "area", "pie", "table", "map"] as const;
+const CHART_TYPES = ["bar", "line", "area", "pie", "table"] as const;
 
 interface HistoryEntry { question: string; summary: string; }
 
@@ -73,11 +73,6 @@ export function TalkToData() {
 
   const submit = () => { ask(question); setQuestion(""); };
   const restyle = (chart: string) => {
-    // "map" is a client-side-only view — swap chart type without hitting the backend
-    if (chart === "map" && result) {
-      setResult({ ...result, ui_config: { ...result.ui_config, chart_type: "map" as any } });
-      return;
-    }
     ask(`${chart} chart`);
   };
   const useChip = (s: string) => { ask(s); setQuestion(""); };

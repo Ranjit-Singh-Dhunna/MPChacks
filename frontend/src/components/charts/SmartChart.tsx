@@ -1,4 +1,3 @@
-import { lazy, Suspense } from "react";
 import {
   Area,
   AreaChart,
@@ -17,11 +16,6 @@ import {
   YAxis,
 } from "recharts";
 import type { UIConfig } from "../../types";
-
-// Lazy-load MiniGlobe so Three.js doesn't bloat every page
-const MiniGlobe = lazy(() =>
-  import("../globe/MiniGlobe").then((m) => ({ default: m.MiniGlobe }))
-);
 
 const PALETTE = [
   "#2dd4bf", "#7c83ff", "#f59e0b", "#f43f5e", "#38bdf8",
@@ -61,26 +55,9 @@ export function SmartChart({ data, ui }: { data: Row[]; ui: UIConfig }) {
       </div>
     );
   }
+
   const { x, y } = inferKeys(data, ui);
 
-  // ── MAP VIEW ──
-  if ((ui as any).chart_type === "map") {
-    return (
-      <div className="flex justify-center items-center overflow-hidden rounded-2xl bg-[#050a14] py-2">
-        <Suspense
-          fallback={
-            <div className="h-72 flex items-center justify-center text-slate-500 text-sm">
-              Loading globe…
-            </div>
-          }
-        >
-          <MiniGlobe data={data as any} xKey={x} yKey={y} width={560} height={300} />
-        </Suspense>
-      </div>
-    );
-  }
-
-  // ── TABLE ──
   if (ui.chart_type === "table") {
     const keys = Object.keys(data[0]);
     return (
@@ -109,7 +86,6 @@ export function SmartChart({ data, ui }: { data: Row[]; ui: UIConfig }) {
     );
   }
 
-  // ── RECHARTS ──
   return (
     <ResponsiveContainer width="100%" height={320}>
       {ui.chart_type === "pie" ? (

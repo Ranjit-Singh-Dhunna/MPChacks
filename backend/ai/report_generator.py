@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from ai.gemini_client import gemini
 from models import Transaction
+from reports.latex import build_ai_report_latex
 from schemas import AIReportResponse, ReportGroup, ReportTransaction
 
 logger = logging.getLogger(__name__)
@@ -105,7 +106,7 @@ def generate_ai_report(db: Session, query: str) -> AIReportResponse:
         if isinstance(summary_resp, dict) and "summary" in summary_resp:
             executive_summary = summary_resp["summary"]
 
-    return AIReportResponse(
+    report = AIReportResponse(
         report_title=plan["report_title"],
         employee_name=plan["employee_name"] or ("Multiple" if not plan["department"] else plan["department"]),
         date_range="Recent",
@@ -113,3 +114,5 @@ def generate_ai_report(db: Session, query: str) -> AIReportResponse:
         executive_summary=executive_summary,
         groups=report_groups
     )
+    report.latex_source = build_ai_report_latex(report)
+    return report
