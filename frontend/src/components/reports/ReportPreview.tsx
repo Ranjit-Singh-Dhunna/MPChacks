@@ -192,35 +192,47 @@ function ReportPage({
 function FullReportDocument({ report }: { report: AIReportResponse }) {
   return (
     <div
-      id="report-pdf-content"
-      className="fixed left-[-10000px] top-0 w-[794px] bg-white text-slate-950"
+      style={{
+        position: "absolute",
+        left: 0,
+        top: 0,
+        width: "794px",
+        height: 0,
+        overflow: "hidden",
+        pointerEvents: "none",
+      }}
       aria-hidden="true"
     >
-      <textarea id="report-latex-source" className="hidden" readOnly value={report.latex_source} />
-      <ReportPage report={report} />
-      <div className="report-a4-page min-h-[1123px] bg-white p-10 text-slate-950">
-        <h2 className="mb-5 border-b-2 border-slate-950 pb-3 text-2xl font-black uppercase">
-          Full Transaction Detail
-        </h2>
-        {report.groups.map((group) => (
-          <section key={group.category} className="avoid-page-break mb-8">
-            <div className="mb-3 flex justify-between gap-4 border-b border-slate-200 pb-2">
-              <h3 className="break-words text-lg font-black">{group.category}</h3>
-              <div className="shrink-0 text-lg font-black tabular-nums">{money(group.total_amount)}</div>
-            </div>
-            <table className="w-full table-fixed border-collapse text-left">
-              <thead>
-                <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400">
-                  <th className="w-[86px] py-2 pr-3 font-black">Date</th>
-                  <th className="py-2 pr-3 font-black">Merchant</th>
-                  <th className="w-[92px] py-2 pr-3 text-right font-black">Amount</th>
-                  <th className="w-[120px] py-2 font-black">Policy</th>
-                </tr>
-              </thead>
-              <TransactionRows transactions={group.transactions} />
-            </table>
-          </section>
-        ))}
+      <div
+        id="report-pdf-content"
+        className="w-[794px] bg-white text-slate-950"
+      >
+        <textarea id="report-latex-source" className="hidden" readOnly value={report.latex_source} />
+        <ReportPage report={report} />
+        <div className="report-a4-page min-h-[1123px] bg-white p-10 text-slate-950">
+          <h2 className="mb-5 border-b-2 border-slate-950 pb-3 text-2xl font-black uppercase">
+            Full Transaction Detail
+          </h2>
+          {report.groups.map((group) => (
+            <section key={group.category} className="avoid-page-break mb-8">
+              <div className="mb-3 flex justify-between gap-4 border-b border-slate-200 pb-2">
+                <h3 className="break-words text-lg font-black">{group.category}</h3>
+                <div className="shrink-0 text-lg font-black tabular-nums">{money(group.total_amount)}</div>
+              </div>
+              <table className="w-full table-fixed border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400">
+                    <th className="w-[86px] py-2 pr-3 font-black">Date</th>
+                    <th className="py-2 pr-3 font-black">Merchant</th>
+                    <th className="w-[92px] py-2 pr-3 text-right font-black">Amount</th>
+                    <th className="w-[120px] py-2 font-black">Policy</th>
+                  </tr>
+                </thead>
+                <TransactionRows transactions={group.transactions} />
+              </table>
+            </section>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -277,10 +289,25 @@ export function ReportPreview({ report }: { report: AIReportResponse }) {
 
   return (
     <div className="flex h-full flex-col items-center overflow-hidden bg-transparent p-4 lg:p-12">
-      <div className="mb-6 flex w-full max-w-[850px] justify-end">
+      <div className="mb-6 flex w-full max-w-[850px] justify-end gap-3">
+        <button
+          onClick={() => {
+            const blob = new Blob([report.latex_source], { type: "application/x-latex" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${report.report_title || "Expense_Report"}.tex`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+          className="flex items-center gap-2 bg-slate-800 px-5 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-slate-700 hover:shadow-lg disabled:opacity-60 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[18px]">code</span>
+          Download LaTeX (.tex)
+        </button>
         <button
           onClick={() => exportElementToPDF("report-pdf-content", report.report_title || "Expense_Report")}
-          className="flex items-center gap-2 bg-blue-600 px-5 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20 disabled:opacity-60"
+          className="flex items-center gap-2 bg-blue-600 px-5 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20 disabled:opacity-60 rounded-lg"
         >
           <span className="material-symbols-outlined text-[18px]">download</span>
           Download PDF
