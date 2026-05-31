@@ -8,29 +8,45 @@ export async function exportElementToPDF(elementId: string, filename: string) {
   }
 
   try {
-    element.classList.add("pdf-exporting");
-
     const opt = {
-      margin:       [10, 10, 10, 10] as [number, number, number, number],
+      margin:       0,
       filename:     `${filename}.pdf`,
       image:        { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas:  { 
-        scale: 2, 
-        useCORS: true, 
+      html2canvas:  {
+        scale: 2,
+        useCORS: true,
         logging: false,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight
+        width: 794,
+        windowWidth: 794,
+        onclone: (clonedDoc: Document) => {
+          const el = clonedDoc.getElementById(elementId);
+          if (el) {
+            // Reset the target element itself
+            el.style.position = 'static';
+            el.style.left = '0';
+            el.style.top = '0';
+            el.style.width = '794px';
+
+            // Also reset the offscreen parent wrapper so the clone is at origin
+            const parent = el.parentElement;
+            if (parent) {
+              parent.style.position = 'static';
+              parent.style.left = '0';
+              parent.style.top = '0';
+              parent.style.width = '794px';
+              parent.style.overflow = 'visible';
+              parent.style.height = 'auto';
+            }
+          }
+        }
       },
       jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const, compress: true },
       pagebreak:    { mode: ['css', 'legacy'] as const, avoid: ['.avoid-page-break'] }
     };
 
     await html2pdf().set(opt).from(element).save();
-
-    element.classList.remove("pdf-exporting");
     return true;
   } catch (error) {
-    element.classList.remove("pdf-exporting");
     console.error("Failed to generate PDF", error);
     return false;
   }

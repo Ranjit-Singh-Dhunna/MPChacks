@@ -194,11 +194,9 @@ function FullReportDocument({ report }: { report: AIReportResponse }) {
     <div
       style={{
         position: "absolute",
-        left: 0,
+        left: "-9999px",
         top: 0,
         width: "794px",
-        height: 0,
-        overflow: "hidden",
         pointerEvents: "none",
       }}
       aria-hidden="true"
@@ -289,22 +287,7 @@ export function ReportPreview({ report }: { report: AIReportResponse }) {
 
   return (
     <div className="flex h-full flex-col items-center overflow-hidden bg-transparent p-4 lg:p-12">
-      <div className="mb-6 flex w-full max-w-[850px] justify-end gap-3">
-        <button
-          onClick={() => {
-            const blob = new Blob([report.latex_source], { type: "application/x-latex" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `${report.report_title || "Expense_Report"}.tex`;
-            a.click();
-            URL.revokeObjectURL(url);
-          }}
-          className="flex items-center gap-2 bg-slate-800 px-5 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-slate-700 hover:shadow-lg disabled:opacity-60 rounded-lg"
-        >
-          <span className="material-symbols-outlined text-[18px]">code</span>
-          Download LaTeX (.tex)
-        </button>
+      <div className="mb-6 flex w-full max-w-[850px] justify-end">
         <button
           onClick={() => exportElementToPDF("report-pdf-content", report.report_title || "Expense_Report")}
           className="flex items-center gap-2 bg-blue-600 px-5 py-2.5 text-[13px] font-bold text-white shadow-md transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20 disabled:opacity-60 rounded-lg"

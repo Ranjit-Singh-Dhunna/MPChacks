@@ -416,3 +416,42 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* ─── PDF Export Light Theme Enforcer ────────────────────────────────────── */
+#report-pdf-content {
+  /* Force clean light-mode variables inside the PDF container regardless of dark-mode state */
+  --bg-base:        #ffffff !important;
+  --surface-0:      #ffffff !important;
+  --surface-1:      #f8fafc !important;
+  --surface-2:      #f1f5f9 !important;
+  --surface-3:      #e2e8f0 !important;
+
+  --ink-primary:    #0f172a !important;
+  --ink-secondary:  #334155 !important;
+  --ink-muted:      #475569 !important;
+  --ink-faint:      #64748b !important;
+
+  --accent:         #2563eb !important;
+  --accent-hover:   #1d4ed8 !important;
+  --accent-ai:      #7c3aed !important;
+
+  --border:         #cbd5e1 !important;
+  --border-faint:   #e2e8f0 !important;
+
+  /* Reset box model and colors to standard printable formats */
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  font-family: "Inter", system-ui, sans-serif !important;
+}
+
+#report-pdf-content * {
+  border-color: var(--border) !important;
+}
+
+#report-pdf-content table thead {
+  background-color: var(--surface-1) !important;
+}
+
+#report-pdf-content table tbody tr {
+  border-bottom: 1px solid var(--border-faint) !important;
+}
