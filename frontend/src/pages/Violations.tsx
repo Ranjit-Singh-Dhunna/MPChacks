@@ -5,14 +5,11 @@ import {
 } from "recharts";
 import {
   complianceExportUrl,
-  getClusters,
   getComplianceCase,
   getComplianceCases,
-  getComplianceOverview,
   getComplianceViolations,
   updateComplianceCase,
 } from "../api/client";
-import { ClusterCard } from "../components/fraud/ClusterCard";
 import { useAsync } from "../hooks/useAsync";
 import { cadPrecise, dateTime } from "../lib/format";
 import type {
@@ -21,10 +18,9 @@ import type {
   ComplianceCaseStatus,
   Severity,
   Transaction,
-  FraudCluster,
 } from "../types";
 
-type View = "cases" | "violations" | "patterns" | "timeline";
+type View = "cases" | "violations" | "timeline";
 type CaseAction = "MARK_REVIEWED" | "ESCALATE" | "REQUEST_INFO" | "DISMISS_FALSE_POSITIVE" | "ADD_NOTE";
 
 const SEVERITY_ORDER: Record<Severity, number> = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
@@ -83,29 +79,6 @@ function SeverityBadge({ severity }: { severity: Severity }) {
   );
 }
 
-function SummaryMetric({
-  label,
-  value,
-  icon,
-  tone = "default",
-}: {
-  label: string;
-  value: string | number;
-  icon: string;
-  tone?: "default" | "danger" | "warning";
-}) {
-  const toneClass = tone === "danger" ? "text-error" : tone === "warning" ? "text-amber-700" : "text-primary";
-  return (
-    <div className="border-r border-outline-variant/50 px-5 py-4 last:border-r-0">
-      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-        <span className={`material-symbols-outlined text-[16px] ${toneClass}`}>{icon}</span>
-        {label}
-      </div>
-      <div className={`mt-2 text-2xl font-black tracking-tight ${toneClass}`}>{value}</div>
-    </div>
-  );
-}
-
 function getPolicyReasons(caseDetail: ComplianceCase | ComplianceCaseDetail): string[] {
   const evidence = caseDetail.evidence as { policy_reasons?: unknown };
   return Array.isArray(evidence.policy_reasons)
@@ -132,38 +105,31 @@ function CaseRow({
     <motion.button
       type="button"
       onClick={onSelect}
-      className={`w-full border-l-4 border-y border-r p-4 text-left transition-all ${
+      className={`w-full border-l-4 border-y border-r p-3 text-left transition-all ${
         selected ? "border-r-secondary shadow-md" : "border-r-outline-variant/60 hover:shadow-sm"
       } ${riskTone(item.severity)}`}
       whileHover={{ x: 2 }}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <SeverityBadge severity={item.severity} />
-            <StatusBadge status={item.status} />
-            <span className="rounded-full bg-white/80 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant border border-outline-variant/50">
-              {item.case_type}
-            </span>
-          </div>
-          <h2 className="mt-3 text-base font-black text-primary">{item.title}</h2>
-          <p className="mt-1 line-clamp-2 text-sm leading-6 text-on-surface-variant">{item.summary}</p>
-        </div>
-        <div className="shrink-0 text-right">
-          <div className="font-mono text-lg font-black text-primary">{cadPrecise(item.exposure_cad)}</div>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Risk {item.risk_score}/100</div>
-        </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <SeverityBadge severity={item.severity} />
+        <StatusBadge status={item.status} />
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
+      <h2 className="mt-3 line-clamp-2 text-sm font-black leading-5 text-primary">{item.title}</h2>
+      <div className="mt-3 flex items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+        <span>{item.case_type}</span>
+        <span className="font-mono text-primary">{item.risk_score}/100</span>
+      </div>
+      <div className="mt-3 space-y-1.5 text-xs text-on-surface-variant">
         <span className="inline-flex items-center gap-1">
           <span className="material-symbols-outlined text-[15px]">person</span>
-          {item.related_employee_names.join(", ") || "No employee"}
+          <span className="truncate">{item.related_employee_names.join(", ") || "No employee"}</span>
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="material-symbols-outlined text-[15px]">receipt_long</span>
           {item.related_transaction_ids.length} transaction(s)
         </span>
-        {reasons[0] && <span className="truncate text-on-surface-variant">Reason: {reasons[0]}</span>}
+        <span className="block font-mono font-bold text-primary">{cadPrecise(item.exposure_cad)}</span>
+        {reasons[0] && <span className="block truncate text-on-surface-variant">Reason: {reasons[0]}</span>}
       </div>
     </motion.button>
   );
@@ -364,13 +330,11 @@ export function Violations() {
   const [search, setSearch] = useState("");
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
 
-  const overview = useAsync(getComplianceOverview, []);
   const cases = useAsync(
     () => getComplianceCases({ status, search: search.trim() || undefined, limit: 150 }),
     [status, search]
   );
   const violations = useAsync(() => getComplianceViolations({ size: 1000 }), []);
-  const clusters = useAsync(getClusters, []);
 
   const sortedCases = useMemo(() => {
     return [...(cases.data ?? [])].sort((a, b) => {
@@ -379,11 +343,6 @@ export function Violations() {
       return b.risk_score - a.risk_score;
     });
   }, [cases.data]);
-
-  const clusterGroups = useMemo(() => {
-    if (!clusters.data) return [];
-    return [...clusters.data].sort((a, b) => b.risk_score - a.risk_score);
-  }, [clusters.data]);
 
   const timelineData = useMemo(() => {
     if (!violations.data?.transactions) return [];
@@ -409,7 +368,6 @@ export function Violations() {
   }, [selectedCaseId, sortedCases]);
 
   const reloadAll = () => {
-    overview.reload();
     cases.reload();
     violations.reload();
   };
@@ -439,19 +397,7 @@ export function Violations() {
       </div>
 
       <main className="mx-auto max-w-[1500px] p-6">
-        <section className="grid grid-cols-2 overflow-hidden border border-outline-variant/60 bg-white lg:grid-cols-5">
-          <SummaryMetric label="Open cases" value={overview.data?.open_cases ?? "-"} icon="folder_open" />
-          <SummaryMetric label="Critical / high" value={overview.data?.critical_high_cases ?? "-"} icon="priority_high" tone="danger" />
-          <SummaryMetric label="Open exposure" value={overview.data ? cadPrecise(overview.data.total_exposure_cad) : "-"} icon="payments" />
-          <SummaryMetric label="Violations" value={overview.data?.policy_violations ?? "-"} icon="gpp_bad" tone="warning" />
-          <SummaryMetric
-            label="Last scan"
-            value={overview.data?.last_scan_at ? dateTime(overview.data.last_scan_at) : "Not run"}
-            icon="schedule"
-          />
-        </section>
-
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex bg-surface-container-low p-1 rounded-full overflow-hidden">
             <button
               onClick={() => setView("cases")}
@@ -464,12 +410,6 @@ export function Violations() {
               className={`px-4 py-2 text-xs font-black ${view === "violations" ? "bg-secondary text-white" : "text-on-surface-variant"}`}
             >
               Policy violations ({violations.data?.total ?? 0})
-            </button>
-            <button
-              onClick={() => setView("patterns")}
-              className={`px-4 py-2 text-xs font-black ${view === "patterns" ? "bg-secondary text-white" : "text-on-surface-variant"}`}
-            >
-              Patterns
             </button>
             <button
               onClick={() => setView("timeline")}
@@ -508,8 +448,8 @@ export function Violations() {
         </div>
 
         {view === "cases" && (
-          <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(520px,0.8fr)]">
-            <section className="space-y-3">
+          <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(240px,20%)_minmax(0,80%)]">
+            <section className="space-y-2">
               {cases.loading && <div className="border border-outline-variant/60 bg-white p-6 text-sm text-on-surface-variant">Loading compliance cases...</div>}
               {cases.error && <div className="border border-error/20 bg-error-container p-6 text-sm text-error">{cases.error}</div>}
               {!cases.loading && sortedCases.length === 0 && (
@@ -535,67 +475,6 @@ export function Violations() {
           <section className="mt-5">
             {violations.loading && <div className="border border-outline-variant/60 bg-white p-6 text-sm text-on-surface-variant">Loading violations...</div>}
             {violations.data && <TransactionTable transactions={violations.data.transactions} />}
-          </section>
-        )}
-
-        {view === "patterns" && (
-          <section className="mt-5">
-            {clusters.loading && (
-              <div className="border border-outline-variant/60 bg-white p-6 text-sm text-on-surface-variant">
-                Loading fraud clusters…
-              </div>
-            )}
-            {!clusters.loading && clusterGroups.length === 0 && (
-              <div className="border border-outline-variant/60 bg-white p-10 text-center">
-                <span className="material-symbols-outlined text-[40px] text-on-surface-variant mb-3 block">hub</span>
-                <h2 className="text-base font-black text-primary">No fraud patterns detected yet</h2>
-                <p className="mt-2 text-sm text-on-surface-variant">Run Ingest + Analyze from the Dashboard to detect fraud clusters.</p>
-              </div>
-            )}
-            {clusterGroups.length > 0 && (
-              <>
-                {/* Cluster summary bar */}
-                <div className="mb-5 flex flex-wrap gap-3">
-                  {clusterGroups.map((c) => (
-                    <div
-                      key={c.cluster_id}
-                      className={`flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold ${
-                        c.severity === "CRITICAL"
-                          ? "border-error/30 bg-error-container/20 text-error"
-                          : c.severity === "HIGH"
-                          ? "border-orange-200 bg-orange-50 text-orange-700"
-                          : "border-amber-200 bg-amber-50 text-amber-700"
-                      }`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${
-                        c.severity === "CRITICAL" ? "bg-error animate-pulse" :
-                        c.severity === "HIGH" ? "bg-orange-500" : "bg-amber-400"
-                      }`} />
-                      {c.pattern_type.replace(/_/g, " ")} — {c.transaction_ids.length} txns
-                    </div>
-                  ))}
-                </div>
-
-                {/* Cluster cards grid */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                  {clusterGroups.map((cluster, i) => {
-                    // Match transactions to this cluster
-                    const clusterTxns = (violations.data?.transactions ?? []).filter((t) =>
-                      cluster.transaction_ids.includes(t.transaction_id)
-                    );
-                    return (
-                      <ClusterCard
-                        key={cluster.cluster_id}
-                        cluster={cluster}
-                        index={i}
-                        transactions={clusterTxns}
-                        onViewTransactions={() => setView("violations")}
-                      />
-                    );
-                  })}
-                </div>
-              </>
-            )}
           </section>
         )}
 
