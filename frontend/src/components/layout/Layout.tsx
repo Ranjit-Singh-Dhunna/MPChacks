@@ -29,7 +29,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3 px-2 mb-7">
           <div className="flex flex-col">
             <div className="text-3xl font-serif font-medium italic tracking-tight mb-1" style={{ color: "var(--ink-primary)" }}>
-              Aegis
+              CanHealth
             </div>
             <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-muted)" }}>
               Expense Intelligence

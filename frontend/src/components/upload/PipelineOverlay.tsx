@@ -105,7 +105,7 @@ export function PipelineOverlay({ steps, progress }: Props) {
           </motion.div>
           <div>
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Aegis Intelligence Engine
+              CanHealth Intelligence Engine
             </div>
             <div className="text-lg font-black text-white">Analyzing transactions…</div>
           </div>

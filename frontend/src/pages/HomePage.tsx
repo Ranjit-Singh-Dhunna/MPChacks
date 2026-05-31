@@ -126,10 +126,10 @@ export function HomePage() {
       <nav className="flex items-center justify-between px-8 py-4 border-b border-white/10">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl gradient-hero flex items-center justify-center text-white font-serif font-medium italic text-2xl">
-            B
+            C
           </div>
           <div className="flex flex-col justify-center">
-            <div className="text-2xl font-serif font-medium italic text-white tracking-tight leading-none">Aegis</div>
+            <div className="text-2xl font-serif font-medium italic text-white tracking-tight leading-none">CanHealth</div>
             <div className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">
               Expense Intelligence
             </div>
@@ -165,7 +165,7 @@ export function HomePage() {
             <span className="ai-text-gradient italic">fraud intelligence</span>
           </h1>
           <p className="text-lg text-slate-300 font-medium mb-8 max-w-md">
-            Upload your transactions CSV. Aegis's hybrid AI pipeline detects fraud clusters, flags policy violations, and answers your finance questions — all in under 2 seconds.
+            Upload your transactions CSV. CanHealth's hybrid AI pipeline detects fraud clusters, flags policy violations, and answers your finance questions — all in under 2 seconds.
           </p>
 
           {/* Stats row */}

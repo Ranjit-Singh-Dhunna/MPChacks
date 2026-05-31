@@ -298,7 +298,7 @@ export function TalkToData() {
 
               {loading && (
                 <div className="rounded-2xl border border-secondary/20 bg-secondary/5 ai-glow px-6 py-8 text-center">
-                  <div className="text-secondary font-bold text-sm animate-pulse">Aegis AI is thinking…</div>
+                  <div className="text-secondary font-bold text-sm animate-pulse">CanHealth AI is thinking…</div>
                   <div className="flex justify-center gap-1.5 mt-4">
                     {[0, 1, 2].map((i) => (
                       <motion.div key={i} className="w-2 h-2 rounded-full bg-secondary"
