@@ -54,8 +54,7 @@ def dashboard(db: Session = Depends(get_db)):
         Transaction.approval_status == "PENDING").scalar() or 0
     clusters = db.query(func.count(FraudCluster.cluster_id)).scalar() or 0
 
-    flagged_total = violations + reviews
-    ai_ratio = round(clusters / txn_count, 4) if txn_count else 0.0
+    ai_ratio = 0.0
 
     cat_rows = (db.query(Transaction.ai_category,
                          func.sum(Transaction.amount_cad).label("total"))

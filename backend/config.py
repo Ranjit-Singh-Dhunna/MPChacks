@@ -1,5 +1,6 @@
 """Application settings, loaded from environment / .env."""
 from pathlib import Path
+from urllib.parse import urlparse
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -15,6 +16,7 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.1-flash-lite"
+    gemini_cluster_narratives: bool = False
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "21m00Tcm4TlvDq8ikWAM"
     fx_rate_usd_to_cad: float = 1.379
@@ -41,6 +43,22 @@ class Settings(BaseSettings):
     @property
     def has_elevenlabs(self) -> bool:
         return bool(self.elevenlabs_api_key)
+
+    @property
+    def resolved_database_url(self) -> str:
+        """Resolve the default SQLite path relative to backend/, not the launch cwd."""
+        if not self.database_url.startswith("sqlite:///"):
+            return self.database_url
+        raw_path = self.database_url.removeprefix("sqlite:///")
+        if raw_path in {":memory:", ""}:
+            return self.database_url
+        parsed = urlparse(self.database_url)
+        if parsed.netloc:
+            return self.database_url
+        db_path = Path(raw_path)
+        if db_path.is_absolute():
+            return self.database_url
+        return f"sqlite:///{(BACKEND_DIR / db_path).as_posix()}"
 
 
 settings = Settings()

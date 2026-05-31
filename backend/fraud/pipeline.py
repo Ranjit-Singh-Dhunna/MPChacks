@@ -1,7 +1,7 @@
-"""Tier 1-3 analysis pipeline: deterministic policy + fraud clustering + AI narratives.
+"""Tier 1-3 analysis pipeline: deterministic policy + fraud clustering.
 
-Only CRITICAL/HIGH fraud clusters reach Gemini (the ~5-15%). Everything else is
-resolved deterministically. Writes results back onto each Transaction row.
+Compliance analysis is deterministic by default. Gemini is reserved for future
+case types where the numeric evidence is insufficient on its own.
 """
 import time
 
@@ -9,6 +9,7 @@ import pandas as pd
 from sqlalchemy.orm import Session
 
 from ai.gemini_client import gemini
+from config import settings
 from compliance.cases import sync_compliance_cases
 from fraud.engine import FraudFlag, run_all_detectors, build_risk_profiles
 from ingestion.enricher import lookup_mcc_category
@@ -16,6 +17,8 @@ from models import Employee, EmployeeRiskProfileModel, FraudCluster, Policy, Tra
 from policy.rule_engine import RuleEngine
 
 SEVERITY_SCORE = {"CRITICAL": 90, "HIGH": 70, "MEDIUM": 45, "LOW": 20}
+RECOMMENDED_ACTION = {"CRITICAL": "ESCALATE", "HIGH": "INVESTIGATE", "MEDIUM": "MONITOR", "LOW": "MONITOR"}
+AMBIGUOUS_PATTERN_TYPES = {"UNKNOWN", "MANUAL_REVIEW", "COMPLEX_MULTI_SIGNAL"}
 
 _NARRATIVE_PROMPT = """You are Brim's fraud-detection AI. Analyze this flagged cluster.
 
@@ -29,6 +32,47 @@ Return ONLY valid JSON:
 {{"risk_score": <int 0-100>, "narrative": "<2-3 sentences, fact-based>",
   "confidence": "HIGH|MEDIUM|LOW", "recommended_action": "ESCALATE|INVESTIGATE|MONITOR"}}
 """
+
+
+def _deterministic_cluster_score(flag: FraudFlag) -> int:
+    score = SEVERITY_SCORE.get(flag.severity, 40)
+    extra = flag.extra or {}
+    if "z_score" in extra:
+        score = max(score, min(100, int(55 + float(extra["z_score"]) * 8)))
+    if "velocity_z" in extra:
+        score = max(score, min(100, int(50 + float(extra["velocity_z"]) * 8)))
+    if "peer_z" in extra:
+        score = max(score, min(100, int(50 + float(extra["peer_z"]) * 12)))
+    if "p_value" in extra:
+        p_value = float(extra["p_value"])
+        if p_value < 0.001:
+            score = max(score, 95)
+        elif p_value < 0.01:
+            score = max(score, 85)
+    if "hhi_score" in extra:
+        score = max(score, min(100, int(45 + float(extra["hhi_score"]) * 70)))
+    if len(flag.transaction_ids) >= 10:
+        score = min(100, score + 5)
+    return score
+
+
+def _deterministic_cluster_narrative(flag: FraudFlag, risk_score: int) -> str:
+    employees = ", ".join(flag.employee_names) or "unknown employees"
+    count = len(flag.transaction_ids)
+    return (
+        f"{flag.description} Deterministic score {risk_score}/100 is based on "
+        f"{count} transaction(s), {flag.total_amount_cad:,.2f} CAD exposure, "
+        f"severity {flag.severity}, and matched detector {flag.pattern_type} for {employees}."
+    )
+
+
+def _needs_gemini_context(flag: FraudFlag) -> bool:
+    return (
+        settings.gemini_cluster_narratives
+        and gemini.available
+        and flag.pattern_type in AMBIGUOUS_PATTERN_TYPES
+        and flag.severity in ("CRITICAL", "HIGH")
+    )
 
 
 def _load_df(db: Session) -> pd.DataFrame:
@@ -120,10 +164,12 @@ def run_fraud_pipeline(db: Session) -> dict:
             else:
                 reviews += 1
 
-    # ---- Tier 3: AI narratives for CRITICAL/HIGH clusters only ----
+    # ---- Tier 3: structured cluster records, deterministic by default ----
     db.query(FraudCluster).delete()
     ai_calls = 0
     for i, f in enumerate(flags, start=1):
+        risk_score = _deterministic_cluster_score(f)
+        recommended_action = RECOMMENDED_ACTION.get(f.severity, "MONITOR")
         cluster = FraudCluster(
             cluster_id=f"CLU-{i:03d}",
             pattern_type=f.pattern_type,
@@ -132,10 +178,11 @@ def run_fraud_pipeline(db: Session) -> dict:
             severity=f.severity,
             total_amount_cad=f.total_amount_cad,
             description=f.description,
-            risk_score=SEVERITY_SCORE.get(f.severity, 50),
-            recommended_action="ESCALATE" if f.severity == "CRITICAL" else "INVESTIGATE",
+            ai_narrative=_deterministic_cluster_narrative(f, risk_score),
+            risk_score=risk_score,
+            recommended_action=recommended_action,
         )
-        if f.severity in ("CRITICAL", "HIGH") and gemini.available:
+        if _needs_gemini_context(f):
             res = gemini.call_json(_NARRATIVE_PROMPT.format(
                 pattern=f.pattern_type, count=len(f.transaction_ids),
                 total=f.total_amount_cad, employees=", ".join(f.employee_names),
