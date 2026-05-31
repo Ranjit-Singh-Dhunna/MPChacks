@@ -67,40 +67,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        {/* Bottom cluster */}
-        <div
-          className="mt-4 pt-4"
-          style={{ borderTop: "1px solid var(--border)" }}
-        >
-          {/* Theme toggle */}
-          <button
-            onClick={toggle}
-            className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all hover:bg-white/5"
-            style={{ color: "var(--ink-muted)" }}
-          >
-            <motion.span
-              className="material-symbols-outlined text-[19px]"
-              key={theme}
-              initial={{ rotate: -30, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              transition={{ duration: 0.25 }}
-            >
-              {isDark ? "light_mode" : "dark_mode"}
-            </motion.span>
-            {isDark ? "Light mode" : "Dark mode"}
-          </button>
-
-          {/* Brim AI indicator */}
-          <div className="flex items-center gap-2 px-3 py-2 mt-1">
-            <span
-              className="w-2 h-2 rounded-full animate-pulse"
-              style={{ background: "var(--accent)" }}
-            />
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-muted)" }}>
-              Brim AI Active
-            </span>
-          </div>
-        </div>
       </aside>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}

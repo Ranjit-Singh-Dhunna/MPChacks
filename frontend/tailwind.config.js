@@ -86,16 +86,16 @@ export default {
         "gutter": "16px"
       },
       fontFamily: {
-        sans: ["Space Grotesk", "system-ui", "sans-serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
         "data-mono": ["JetBrains Mono"],
-        "label-caps": ["Space Grotesk"],
-        "body-sm": ["Space Grotesk"],
-        "headline-md": ["Space Grotesk"],
-        display: ["Space Grotesk"],
-        "body-md": ["Space Grotesk"],
-        "body-lg": ["Space Grotesk"],
-        "headline-sm": ["Space Grotesk"]
+        "label-caps": ["Inter"],
+        "body-sm": ["Inter"],
+        "headline-md": ["Inter"],
+        display: ["Inter"],
+        "body-md": ["Inter"],
+        "body-lg": ["Inter"],
+        "headline-sm": ["Inter"]
       },
     },
   },

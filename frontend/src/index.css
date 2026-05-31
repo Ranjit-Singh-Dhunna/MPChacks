@@ -7,8 +7,8 @@
   color-scheme: light;
 
   /* Surface stack */
-  --bg-base:        #f7f9fb;
-  --surface-0:      #ffffff;
+  --bg-base:        #f6f4ee;
+  --surface-0:      #f6f4ee;
   --surface-1:      #f2f4f6;
   --surface-2:      #eceef0;
   --surface-3:      #e6e8ea;
@@ -36,11 +36,11 @@
   --border-faint:   #e0e3e5;
 
   /* Sidebar */
-  --sidebar-bg:     #f2f4f6;
+  --sidebar-bg:     #f6f4ee;
   --sidebar-border: #c6c6cd;
 
   /* Card */
-  --card-bg:        #ffffff;
+  --card-bg:        #f6f4ee;
   --card-border:    #c6c6cd;
   --card-shadow:    0 1px 4px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.03);
 }
@@ -88,9 +88,11 @@ body {
   margin: 0;
   background-color: var(--bg-base);
   color: var(--ink-secondary);
-  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.25s ease, color 0.2s ease;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 /* ─── Number / financial type — always JetBrains Mono ─────────────────────── */
@@ -104,10 +106,7 @@ body {
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+::-webkit-scrollbar { display: none; }
 
 /* ─── Component layer ────────────────────────────────────────────────────────── */
 @layer components {
@@ -338,3 +337,44 @@ body {
 [data-theme="dark"] .hover\:bg-surface-container-high:hover { background-color: var(--surface-2) !important; }
 [data-theme="dark"] .hover\:bg-rose-100:hover               { background-color: rgba(246, 70, 93, 0.15)  !important; }
 [data-theme="dark"] .hover\:bg-emerald-100:hover            { background-color: rgba(14, 203, 129, 0.12) !important; }
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Custom scrollbar for dark panels */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

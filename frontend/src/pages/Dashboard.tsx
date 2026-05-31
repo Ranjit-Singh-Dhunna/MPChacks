@@ -195,16 +195,7 @@ export function Dashboard() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* STICKY TOP BAR */}
-      <div className="px-8 py-4 border-b border-outline-variant/65 bg-white sticky top-0 z-20 flex justify-between items-center">
-        <div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Brim Expense Intelligence / Q3 FY25
-          </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="material-symbols-outlined text-[14px] text-secondary">check_circle</span>
-            <span className="text-xs text-on-surface-variant font-medium">Data synced 2 min ago</span>
-          </div>
-        </div>
+      <div className="px-8 py-4 border-b border-outline-variant/65 bg-background sticky top-0 z-20 flex justify-end items-center">
         <div className="flex items-center gap-3">
           {msg && (
             <span className="text-xs text-on-surface-variant max-w-xs truncate">{msg}</span>
@@ -263,38 +254,13 @@ export function Dashboard() {
               <AIEfficiencyCard index={3} aiRatio={aiRatio} clusters={data.fraud_clusters} txnCount={data.transaction_count} isDark={isDark} />
             </div>
 
-            {/* FRAUD CLUSTERS PREVIEW */}
-            {data.fraud_clusters > 0 && (
-              <motion.div
-                className="card p-6"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Active Fraud Clusters</div>
-                    <div className="text-base font-bold text-primary mt-0.5">{data.fraud_clusters} patterns detected</div>
-                  </div>
-                  <button
-                    onClick={() => nav("/violations")}
-                    className="text-[10px] text-secondary font-bold hover:underline flex items-center gap-0.5"
-                  >
-                    View all
-                    <span className="material-symbols-outlined text-[13px]">chevron_right</span>
-                  </button>
-                </div>
-                <div className="text-xs text-on-surface-variant">
-                  Investigate {data.fraud_clusters} fraud patterns detected by hybrid AI + rule engine. Click "View all" for detailed analysis.
-                </div>
-              </motion.div>
-            )}
+
 
             {/* MAIN GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
               {/* LEFT: Spend chart + intelligence breakdown */}
               <motion.div
-                className="card p-6 lg:col-span-3"
+                className="card p-6 lg:col-span-3 flex flex-col"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
@@ -310,7 +276,8 @@ export function Dashboard() {
                   </div>
                 </div>
 
-                <ResponsiveContainer width="100%" height={220}>
+                <div className="flex-1 min-h-[220px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
@@ -330,6 +297,7 @@ export function Dashboard() {
                       strokeDasharray="6 3" fill="none" />
                   </AreaChart>
                 </ResponsiveContainer>
+                </div>
 
                 {/* Intelligence Breakdown */}
                 <div className="mt-5 pt-4 border-t border-outline-variant/50">
@@ -376,7 +344,7 @@ export function Dashboard() {
                       <span className="material-symbols-outlined text-[13px]">chevron_right</span>
                     </button>
                   </div>
-                  <div className="space-y-2 max-h-72 overflow-y-auto">
+                  <div className="space-y-2 max-h-72 overflow-y-auto no-scrollbar">
                     {data.recent_flagged.map((t: Transaction) => (
                       <motion.div
                         key={t.transaction_id}
