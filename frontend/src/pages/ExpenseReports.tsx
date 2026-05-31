@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { generateAIReport } from "../api/client";
-import { ReportPreview } from "../components/reports/ReportPreview";
+import { ReportPreview, ReportPreviewPlaceholder } from "../components/reports/ReportPreview";
+import type { AIReportResponse } from "../types";
 
 const SUGGESTIONS = [
   "Generate a report for Sarah's San Diego conference",
@@ -12,7 +13,7 @@ const SUGGESTIONS = [
 export function ExpenseReports() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<AIReportResponse | null>(null);
   const [error, setError] = useState("");
   const [history, setHistory] = useState<{ role: "user" | "ai"; text: string }[]>([]);
 
@@ -145,7 +146,13 @@ export function ExpenseReports() {
           </div>
         )}
 
-        {report && (
+        {loading && (
+          <div className="absolute inset-0 z-10 animate-fade-in">
+            <ReportPreviewPlaceholder />
+          </div>
+        )}
+
+        {report && !loading && (
           <div className="absolute inset-0 z-10 animate-fade-in flex flex-col">
              <ReportPreview report={report} />
           </div>

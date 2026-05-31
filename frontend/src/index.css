@@ -192,7 +192,45 @@ body {
   border-bottom-color: var(--border) !important;
 }
 
-/* ─── Gradient utilities ─────────────────────────────────────────────────── */
+.ai-glow {
+  box-shadow: inset 0 0 40px rgba(111, 122, 229, 0.05);
+  border: 1px solid rgba(111, 122, 229, 0.2);
+}
+
+.ai-text-gradient {
+  background: linear-gradient(90deg, #316bf3, #6f7ae5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.report-preview-frame {
+  aspect-ratio: 210 / 297;
+  max-height: calc(100vh - 7rem);
+  overflow: hidden;
+  background: white;
+}
+
+.report-a4-page {
+  box-sizing: border-box;
+  width: 100%;
+  page-break-after: always;
+  break-after: page;
+}
+
+.report-a4-page table {
+  max-width: 100%;
+}
+
+.report-a4-page th,
+.report-a4-page td {
+  overflow-wrap: anywhere;
+}
+
+.pdf-exporting {
+  overflow: visible !important;
+}
+
+/* Gradient utilities */
 .gradient-hero {
   background: linear-gradient(135deg, #0051d5 0%, #6f7ae5 50%, #9c55f5 100%);
 }

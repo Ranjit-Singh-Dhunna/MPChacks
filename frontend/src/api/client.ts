@@ -2,6 +2,7 @@ import axios from "axios";
 import type {
   AnalysisResult,
   ApprovalList,
+  AIReportResponse,
   ComplianceCase,
   ComplianceCaseDetail,
   ComplianceOverview,
@@ -43,7 +44,7 @@ export const postQuery = (question: string, voice: boolean, session_id = "defaul
     .post<NLQueryResponse>("/query", { question, voice, session_id })
     .then((r) => r.data);
 
-export const generateAIReport = async (query: string): Promise<any> => {
+export const generateAIReport = async (query: string): Promise<AIReportResponse> => {
   const res = await api.post("/reports/ai-generate", { query });
   return res.data;
 };

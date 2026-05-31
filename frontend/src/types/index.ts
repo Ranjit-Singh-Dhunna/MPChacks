@@ -199,3 +199,29 @@ export interface ReportDetail extends ReportSummary {
   approved_by: string | null;
   line_items: ReportLineItem[];
 }
+
+export interface AIReportTransaction {
+  transaction_id: string;
+  merchant_name: string;
+  amount_usd: number;
+  transaction_date: string;
+  mcc_description: string;
+  policy_flag: PolicyFlag | null;
+  flag_reason: string | null;
+}
+
+export interface AIReportGroup {
+  category: string;
+  total_amount: number;
+  transactions: AIReportTransaction[];
+}
+
+export interface AIReportResponse {
+  report_title: string;
+  employee_name: string | null;
+  date_range: string;
+  total_spend: number;
+  executive_summary: string;
+  groups: AIReportGroup[];
+  latex_source: string;
+}
