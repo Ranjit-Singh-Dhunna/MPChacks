@@ -260,6 +260,29 @@ body {
   box-shadow: 0 8px 30px -8px color-mix(in srgb, var(--error) 30%, transparent);
 }
 
+/* ─── Dossier nav buttons ────────────────────────────────────────────────── */
+.dossier-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
+  transition: all 0.15s ease;
+  background: transparent;
+  cursor: pointer;
+}
+.dossier-nav-btn:hover:not(:disabled) {
+  background-color: var(--surface-1);
+  color: var(--ink-primary);
+}
+.dossier-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* ─── Dark landing page ──────────────────────────────────────────────────── */
 .dark-section {
   background: linear-gradient(135deg, #050a14 0%, #0c1a2e 60%, #111827 100%);
