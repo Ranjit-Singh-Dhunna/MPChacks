@@ -2,6 +2,9 @@ import axios from "axios";
 import type {
   AnalysisResult,
   ApprovalList,
+  ComplianceCase,
+  ComplianceCaseDetail,
+  ComplianceOverview,
   DashboardStats,
   FraudCluster,
   NLQueryResponse,
@@ -43,8 +46,14 @@ export const postQuery = (question: string, voice: boolean, session_id = "defaul
 export const getRules = () =>
   api.get<Policy[]>("/policy/rules").then((r) => r.data);
 
+export const createRule = (data: Omit<Policy, "policy_id">) =>
+  api.post<Policy>("/policy/rules", data).then((r) => r.data);
+
 export const updateRule = (id: number, data: Partial<Policy>) =>
   api.put<Policy>(`/policy/rules/${id}`, data).then((r) => r.data);
+
+export const deleteRule = (id: number) =>
+  api.delete(`/policy/rules/${id}`).then((r) => r.data);
 
 export const uploadPolicy = (file: File) => {
   const fd = new FormData();
@@ -54,6 +63,36 @@ export const uploadPolicy = (file: File) => {
 
 export const getClusters = () =>
   api.get<FraudCluster[]>("/fraud/clusters").then((r) => r.data);
+
+export const getComplianceOverview = () =>
+  api.get<ComplianceOverview>("/compliance/overview").then((r) => r.data);
+
+export const getComplianceCases = (params: {
+  status?: string;
+  severity?: string;
+  case_type?: string;
+  search?: string;
+  limit?: number;
+} = {}) =>
+  api.get<ComplianceCase[]>("/compliance/cases", { params }).then((r) => r.data);
+
+export const getComplianceCase = (caseId: string) =>
+  api.get<ComplianceCaseDetail>(`/compliance/cases/${caseId}`).then((r) => r.data);
+
+export const updateComplianceCase = (
+  caseId: string,
+  data: {
+    action: "MARK_REVIEWED" | "ESCALATE" | "REQUEST_INFO" | "DISMISS_FALSE_POSITIVE" | "ADD_NOTE";
+    note?: string;
+    actor?: string;
+  }
+) =>
+  api.patch<ComplianceCaseDetail>(`/compliance/cases/${caseId}`, data).then((r) => r.data);
+
+export const getComplianceViolations = (params: { page?: number; size?: number; flag?: string } = {}) =>
+  api.get<TransactionPage>("/compliance/violations", { params }).then((r) => r.data);
+
+export const complianceExportUrl = "/api/compliance/export";
 
 export const getApprovals = (limit = 15) =>
   api.get<ApprovalList>("/approvals", { params: { limit } }).then((r) => r.data);

@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EmployeeResponse(BaseModel):
@@ -80,11 +80,22 @@ class PolicyResponse(BaseModel):
     source_text: Optional[str] = None
 
 
+class PolicyCreate(BaseModel):
+    rule_name: str
+    rule_type: str
+    rule_parameters: dict = Field(default_factory=dict)
+    severity: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"] = "MEDIUM"
+    is_active: bool = True
+    source_text: Optional[str] = None
+
+
 class PolicyUpdate(BaseModel):
     rule_name: Optional[str] = None
+    rule_type: Optional[str] = None
     rule_parameters: Optional[dict] = None
     severity: Optional[str] = None
     is_active: Optional[bool] = None
+    source_text: Optional[str] = None
 
 
 class PolicyUploadResult(BaseModel):
@@ -131,6 +142,8 @@ class ApprovalDossier(BaseModel):
     risk_factors: list[str] = []
     mitigating_factors: list[str] = []
     risk_score: int
+    compliance_warning_count: int = 0
+    compliance_warnings: list[str] = []
 
 
 class ApprovalList(BaseModel):
@@ -161,6 +174,65 @@ class FraudClusterResponse(BaseModel):
     ai_narrative: Optional[str] = None
     risk_score: int
     recommended_action: Optional[str] = None
+
+
+# ---- Compliance cases ----
+class ComplianceCaseResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    case_id: str
+    case_type: str
+    status: str
+    severity: str
+    risk_score: int
+    exposure_cad: float
+    title: str
+    summary: str
+    recommended_action: str
+    evidence: dict[str, Any]
+    related_transaction_ids: list[str]
+    related_employee_names: list[str]
+    created_at: datetime
+    updated_at: datetime
+    last_seen_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
+
+
+class ComplianceCaseEventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    event_id: int
+    case_id: str
+    action: str
+    actor: str
+    note: Optional[str] = None
+    snapshot: Optional[dict[str, Any]] = None
+    created_at: datetime
+
+
+class ComplianceCaseDetail(ComplianceCaseResponse):
+    events: list[ComplianceCaseEventResponse] = []
+    transactions: list[TransactionResponse] = []
+
+
+class ComplianceCaseUpdate(BaseModel):
+    action: Literal[
+        "MARK_REVIEWED",
+        "ESCALATE",
+        "REQUEST_INFO",
+        "DISMISS_FALSE_POSITIVE",
+        "ADD_NOTE",
+    ]
+    note: str = ""
+    actor: str = "Finance Manager"
+
+
+class ComplianceOverview(BaseModel):
+    open_cases: int
+    critical_high_cases: int
+    total_exposure_cad: float
+    policy_violations: int
+    policy_reviews: int
+    total_cases: int
+    last_scan_at: Optional[datetime] = None
 
 
 # ---- Reports ----

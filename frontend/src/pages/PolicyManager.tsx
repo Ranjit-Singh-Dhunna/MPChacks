@@ -1,12 +1,216 @@
-import { useRef, useState, useEffect } from "react";
-import { getRules, updateRule, uploadPolicy } from "../api/client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  analyze,
+  createRule,
+  deleteRule,
+  getRules,
+  updateRule,
+  uploadPolicy,
+} from "../api/client";
 import { useAsync } from "../hooks/useAsync";
-import type { Policy } from "../types";
+import type { Policy, Severity } from "../types";
+
+type EnforcedRuleType =
+  | "AMOUNT_LIMIT"
+  | "MCC_BANNED"
+  | "RECEIPT_REQUIRED"
+  | "BUDGET_CAP"
+  | "FX_THRESHOLD";
+
+type RuleDraft = {
+  policy_id?: number;
+  rule_name: string;
+  rule_type: string;
+  severity: Severity;
+  is_active: boolean;
+  source_text: string;
+  max_amount_usd: string;
+  applies_to_mcc: string;
+  requires_pre_authorization: boolean;
+  mcc_codes: string;
+  description: string;
+  min_amount_usd: string;
+  department: string;
+  limit_cad: string;
+  max_amount_cad: string;
+};
+
+const ENFORCED_RULE_TYPES: { value: EnforcedRuleType; label: string }[] = [
+  { value: "AMOUNT_LIMIT", label: "Amount limit" },
+  { value: "RECEIPT_REQUIRED", label: "Receipt required" },
+  { value: "MCC_BANNED", label: "Blocked MCC" },
+  { value: "BUDGET_CAP", label: "Monthly budget cap" },
+  { value: "FX_THRESHOLD", label: "FX threshold" },
+];
+
+const SEVERITIES: Severity[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+
+const DEFAULT_DRAFT: RuleDraft = {
+  rule_name: "",
+  rule_type: "AMOUNT_LIMIT",
+  severity: "MEDIUM",
+  is_active: true,
+  source_text: "Custom rule",
+  max_amount_usd: "50",
+  applies_to_mcc: "",
+  requires_pre_authorization: true,
+  mcc_codes: "",
+  description: "",
+  min_amount_usd: "50",
+  department: "",
+  limit_cad: "",
+  max_amount_cad: "68.95",
+};
+
+function isEnforcedRuleType(ruleType: string): ruleType is EnforcedRuleType {
+  return ENFORCED_RULE_TYPES.some((option) => option.value === ruleType);
+}
+
+function textValue(value: unknown, fallback = "") {
+  return value === undefined || value === null ? fallback : String(value);
+}
+
+function numberValue(value: unknown, fallback: string) {
+  return value === undefined || value === null || value === "" ? fallback : String(value);
+}
+
+function listValue(value: unknown) {
+  return Array.isArray(value) ? value.join(", ") : "";
+}
+
+function boolValue(value: unknown, fallback: boolean) {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function parseList(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function money(value: unknown, fallback = 0) {
+  const numeric = Number(value ?? fallback);
+  return Number.isFinite(numeric) ? `$${numeric.toFixed(numeric % 1 === 0 ? 0 : 2)}` : "$0";
+}
+
+function policyToDraft(policy: Policy): RuleDraft {
+  const params = policy.rule_parameters || {};
+  return {
+    ...DEFAULT_DRAFT,
+    policy_id: policy.policy_id,
+    rule_name: policy.rule_name,
+    rule_type: policy.rule_type,
+    severity: policy.severity,
+    is_active: policy.is_active,
+    source_text: policy.source_text || "",
+    max_amount_usd: numberValue(params.max_amount_usd, "50"),
+    applies_to_mcc: listValue(params.applies_to_mcc),
+    requires_pre_authorization: boolValue(params.requires_pre_authorization, true),
+    mcc_codes: listValue(params.mcc_codes),
+    description: textValue(params.description),
+    min_amount_usd: numberValue(params.min_amount_usd, "50"),
+    department: textValue(params.department),
+    limit_cad: numberValue(params.limit_cad, ""),
+    max_amount_cad: numberValue(params.max_amount_cad, "68.95"),
+  };
+}
+
+function draftToPolicy(draft: RuleDraft): Omit<Policy, "policy_id"> {
+  let rule_parameters: Record<string, unknown> = {};
+
+  if (draft.rule_type === "AMOUNT_LIMIT") {
+    rule_parameters = {
+      max_amount_usd: Number(draft.max_amount_usd || 0),
+      applies_to_mcc: parseList(draft.applies_to_mcc).length
+        ? parseList(draft.applies_to_mcc)
+        : null,
+      requires_pre_authorization: draft.requires_pre_authorization,
+    };
+  }
+
+  if (draft.rule_type === "MCC_BANNED") {
+    rule_parameters = {
+      mcc_codes: parseList(draft.mcc_codes),
+      description: draft.description || draft.rule_name,
+    };
+  }
+
+  if (draft.rule_type === "RECEIPT_REQUIRED") {
+    rule_parameters = {
+      min_amount_usd: Number(draft.min_amount_usd || 0),
+    };
+  }
+
+  if (draft.rule_type === "BUDGET_CAP") {
+    rule_parameters = {
+      period: "MONTHLY",
+      department: draft.department.trim() || null,
+      limit_cad: draft.limit_cad ? Number(draft.limit_cad) : null,
+    };
+  }
+
+  if (draft.rule_type === "FX_THRESHOLD") {
+    rule_parameters = {
+      max_amount_cad: Number(draft.max_amount_cad || 0),
+      requires_pre_authorization: draft.requires_pre_authorization,
+      note: draft.description,
+    };
+  }
+
+  return {
+    rule_name: draft.rule_name.trim(),
+    rule_type: draft.rule_type,
+    rule_parameters,
+    severity: draft.severity,
+    is_active: draft.is_active,
+    source_text: draft.source_text.trim() || null,
+  };
+}
+
+function conditionLabel(policy: Policy) {
+  const params = policy.rule_parameters || {};
+  if (policy.rule_type === "AMOUNT_LIMIT") {
+    const scope = Array.isArray(params.applies_to_mcc) ? ` for MCC ${params.applies_to_mcc.join(", ")}` : "";
+    return `${params.requires_pre_authorization === false ? "Expense amount" : "Expense without pre-auth"}${scope}`;
+  }
+  if (policy.rule_type === "MCC_BANNED") {
+    return `MCC in ${Array.isArray(params.mcc_codes) ? params.mcc_codes.join(", ") : "blocked list"}`;
+  }
+  if (policy.rule_type === "RECEIPT_REQUIRED") return "Missing receipt";
+  if (policy.rule_type === "BUDGET_CAP") return params.department ? `Department: ${params.department}` : "Monthly spend";
+  if (policy.rule_type === "FX_THRESHOLD") return params.requires_pre_authorization === false ? "CAD amount" : "CAD amount without pre-auth";
+  if (policy.rule_type === "TIP_CAP") return "Tip percentage";
+  if (policy.rule_type === "VEHICLE_RESTRICTION") return "Rental car booking";
+  if (policy.rule_type === "EXCLUDED_REIMBURSEMENT") return "Excluded reimbursement";
+  if (policy.rule_type === "CARD_USAGE_RESTRICTION") return "Corporate card user";
+  return policy.rule_type;
+}
+
+function constraintLabel(policy: Policy) {
+  const params = policy.rule_parameters || {};
+  if (policy.rule_type === "AMOUNT_LIMIT") return `Over ${money(params.max_amount_usd, 50)} USD`;
+  if (policy.rule_type === "MCC_BANNED") return "Declined";
+  if (policy.rule_type === "RECEIPT_REQUIRED") return `Over ${money(params.min_amount_usd, 50)} USD`;
+  if (policy.rule_type === "BUDGET_CAP") {
+    return params.limit_cad ? `Over ${money(params.limit_cad)} CAD` : "Employee monthly budget";
+  }
+  if (policy.rule_type === "FX_THRESHOLD") return `Over ${money(params.max_amount_cad, 68.95)} CAD`;
+  if (policy.rule_type === "TIP_CAP") return `${params.max_tip_pct || 15}% cap`;
+  if (policy.rule_type === "VEHICLE_RESTRICTION") return "4+ travelers required";
+  if (policy.rule_type === "EXCLUDED_REIMBURSEMENT") return "Non-reimbursable";
+  if (policy.rule_type === "CARD_USAGE_RESTRICTION") return "Authorized user only";
+  return "Stored";
+}
 
 export function PolicyManager() {
-  const { data, loading, reload } = useAsync(getRules, []);
+  const { data, loading, error, reload } = useAsync(getRules, []);
+  const rules = data || [];
   const [status, setStatus] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [savingRule, setSavingRule] = useState(false);
+  const [goingLive, setGoingLive] = useState(false);
+  const [ruleDraft, setRuleDraft] = useState<RuleDraft | null>(null);
   const [uploadedPolicies, setUploadedPolicies] = useState<any[]>(() => {
     const saved = localStorage.getItem("uploaded_policies");
     return saved ? JSON.parse(saved) : [];
@@ -14,26 +218,40 @@ export function PolicyManager() {
   const [selectedPolicy, setSelectedPolicy] = useState<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // If database already contains rules, auto-populate the active policy card in UI
+  const activePolicyCard = useMemo(
+    () => ({
+      id: "p_loaded_db",
+      name: "Brim Expense Policy",
+      fileName: "Brim_Expense_Policy.pdf",
+      rulesCount: rules.length,
+      uploadedAt: "Active Database Ruleset",
+      uploadedBy: "Finance Manager",
+      fileSize: "1.2 MB",
+    }),
+    [rules.length],
+  );
+
   useEffect(() => {
-    if (data && data.length > 0 && uploadedPolicies.length === 0) {
-      const activePolicy = {
-        id: "p_loaded_db",
-        name: "Brim Expense Policy",
-        fileName: "Brim_Expense_Policy.pdf",
-        rulesCount: data.length,
-        uploadedAt: "Active Database Ruleset",
-        uploadedBy: "Finance Manager",
-        fileSize: "1.2 MB",
-      };
-      setUploadedPolicies([activePolicy]);
-      localStorage.setItem("uploaded_policies", JSON.stringify([activePolicy]));
+    if (rules.length > 0 && uploadedPolicies.length === 0) {
+      setUploadedPolicies([activePolicyCard]);
+      localStorage.setItem("uploaded_policies", JSON.stringify([activePolicyCard]));
     }
-  }, [data, uploadedPolicies.length]);
+  }, [activePolicyCard, rules.length, uploadedPolicies.length]);
+
+  useEffect(() => {
+    if (uploadedPolicies.length > 0 && rules.length > 0) {
+      const updated = uploadedPolicies.map((policy) => ({ ...policy, rulesCount: rules.length }));
+      const changed = updated.some((policy, index) => policy.rulesCount !== uploadedPolicies[index].rulesCount);
+      if (changed) {
+        setUploadedPolicies(updated);
+        localStorage.setItem("uploaded_policies", JSON.stringify(updated));
+      }
+    }
+  }, [rules.length, uploadedPolicies]);
 
   const onUpload = async (file: File) => {
     setUploading(true);
-    setStatus("Processing Policy… extracting rules with Gemini");
+    setStatus("Processing policy and extracting rules with Gemini.");
     try {
       const res = await uploadPolicy(file);
       setStatus(`Extracted ${res.rules_extracted} rules successfully.`);
@@ -41,7 +259,7 @@ export function PolicyManager() {
         id: `p_uploaded_${Date.now()}`,
         name: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
         fileName: file.name,
-        rulesCount: res.rules_extracted || 12,
+        rulesCount: res.rules_extracted || 0,
         uploadedAt: "Just now",
         uploadedBy: "Finance Manager",
         fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
@@ -56,102 +274,393 @@ export function PolicyManager() {
     }
   };
 
-  const toggle = (p: Policy) => {
-    updateRule(p.policy_id, { is_active: !p.is_active }).then(reload);
+  const toggle = async (policy: Policy) => {
+    await updateRule(policy.policy_id, { is_active: !policy.is_active });
+    reload();
   };
 
-  // If a policy is selected, render its detailed rules UI
+  const openNewRule = () => {
+    setRuleDraft({ ...DEFAULT_DRAFT });
+  };
+
+  const openEditRule = (policy: Policy) => {
+    setRuleDraft(policyToDraft(policy));
+  };
+
+  const saveRule = async () => {
+    if (!ruleDraft || !ruleDraft.rule_name.trim()) {
+      setStatus("Rule name is required.");
+      return;
+    }
+    if (!isEnforcedRuleType(ruleDraft.rule_type) && !ruleDraft.policy_id) {
+      setStatus("Choose a supported rule type.");
+      return;
+    }
+
+    setSavingRule(true);
+    try {
+      const payload = draftToPolicy(ruleDraft);
+      if (ruleDraft.policy_id) {
+        await updateRule(ruleDraft.policy_id, payload);
+        setStatus("Rule updated.");
+      } else {
+        await createRule(payload);
+        setStatus("Custom rule added.");
+      }
+      setRuleDraft(null);
+      reload();
+    } catch {
+      setStatus("Rule save failed.");
+    } finally {
+      setSavingRule(false);
+    }
+  };
+
+  const removeRule = async (policy: Policy) => {
+    const confirmed = window.confirm(`Delete "${policy.rule_name}"?`);
+    if (!confirmed) return;
+
+    try {
+      await deleteRule(policy.policy_id);
+      setStatus("Rule deleted.");
+      reload();
+    } catch {
+      setStatus("Rule delete failed.");
+    }
+  };
+
+  const saveAndGoLive = async () => {
+    setGoingLive(true);
+    setStatus("Running policy analysis with the current rules.");
+    try {
+      const result = await analyze();
+      setStatus(
+        `Rules are live. ${result.violations_found} violations, ${result.reviews_found} reviews, ${result.compliant} compliant.`,
+      );
+      reload();
+    } catch {
+      setStatus("Rules saved, but analysis failed.");
+    } finally {
+      setGoingLive(false);
+    }
+  };
+
+  const updateDraft = (patch: Partial<RuleDraft>) => {
+    setRuleDraft((current) => (current ? { ...current, ...patch } : current));
+  };
+
+  const renderRuleFields = () => {
+    if (!ruleDraft) return null;
+
+    if (!isEnforcedRuleType(ruleDraft.rule_type)) {
+      return (
+        <div className="rounded-lg border border-outline-variant/60 bg-[#f8f9fa] px-3 py-2 text-xs text-on-surface-variant">
+          This extracted rule is stored for review, but the current transaction data does not expose the fields required for deterministic execution.
+        </div>
+      );
+    }
+
+    if (ruleDraft.rule_type === "MCC_BANNED") {
+      return (
+        <>
+          <label className="space-y-1.5">
+            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">MCC codes</span>
+            <input
+              value={ruleDraft.mcc_codes}
+              onChange={(event) => updateDraft({ mcc_codes: event.target.value })}
+              placeholder="5813, 7995"
+              className="w-full rounded-lg border border-outline-variant px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+            />
+          </label>
+          <label className="space-y-1.5">
+            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Reason</span>
+            <input
+              value={ruleDraft.description}
+              onChange={(event) => updateDraft({ description: event.target.value })}
+              placeholder="Restricted category"
+              className="w-full rounded-lg border border-outline-variant px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+            />
+          </label>
+        </>
+      );
+    }
+
+    if (ruleDraft.rule_type === "RECEIPT_REQUIRED") {
+      return (
+        <label className="space-y-1.5">
+          <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Receipt threshold USD</span>
+          <input
+            type="number"
+            min="0"
+            value={ruleDraft.min_amount_usd}
+            onChange={(event) => updateDraft({ min_amount_usd: event.target.value })}
+            className="w-full rounded-lg border border-outline-variant px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+          />
+        </label>
+      );
+    }
+
+    if (ruleDraft.rule_type === "BUDGET_CAP") {
+      return (
+        <>
+          <label className="space-y-1.5">
+            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Department</span>
+            <input
+              value={ruleDraft.department}
+              onChange={(event) => updateDraft({ department: event.target.value })}
+              placeholder="Optional"
+              className="w-full rounded-lg border border-outline-variant px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+            />
+          </label>
+          <label className="space-y-1.5">
+            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Monthly cap CAD</span>
+            <input
+              type="number"
+              min="0"
+              value={ruleDraft.limit_cad}
+              onChange={(event) => updateDraft({ limit_cad: event.target.value })}
+              placeholder="Employee budget if blank"
+              className="w-full rounded-lg border border-outline-variant px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+            />
+          </label>
+        </>
+      );
+    }
+
+    const amountKey = ruleDraft.rule_type === "FX_THRESHOLD" ? "max_amount_cad" : "max_amount_usd";
+    const amountValue = ruleDraft[amountKey];
+    const amountLabel = ruleDraft.rule_type === "FX_THRESHOLD" ? "CAD threshold" : "USD limit";
+
+    return (
+      <>
+        <label className="space-y-1.5">
+          <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">{amountLabel}</span>
+          <input
+            type="number"
+            min="0"
+            value={amountValue}
+            onChange={(event) => updateDraft({ [amountKey]: event.target.value } as Partial<RuleDraft>)}
+            className="w-full rounded-lg border border-outline-variant px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+          />
+        </label>
+        {ruleDraft.rule_type === "AMOUNT_LIMIT" && (
+          <label className="space-y-1.5">
+            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">MCC filter</span>
+            <input
+              value={ruleDraft.applies_to_mcc}
+              onChange={(event) => updateDraft({ applies_to_mcc: event.target.value })}
+              placeholder="Optional comma-separated MCCs"
+              className="w-full rounded-lg border border-outline-variant px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+            />
+          </label>
+        )}
+        <label className="flex items-center gap-2 text-xs font-bold text-primary">
+          <input
+            type="checkbox"
+            checked={ruleDraft.requires_pre_authorization}
+            onChange={(event) => updateDraft({ requires_pre_authorization: event.target.checked })}
+            className="h-4 w-4 rounded border-outline-variant"
+          />
+          Require missing pre-authorization
+        </label>
+      </>
+    );
+  };
+
+  const ruleModal = ruleDraft && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0c0e12]/55 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-outline-variant bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-outline-variant/60 px-5 py-4">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-secondary">Policy rule</div>
+            <h2 className="text-base font-black text-primary">{ruleDraft.policy_id ? "Edit rule" : "Add custom rule"}</h2>
+          </div>
+          <button
+            onClick={() => setRuleDraft(null)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
+          <label className="space-y-1.5 md:col-span-2">
+            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Rule name</span>
+            <input
+              value={ruleDraft.rule_name}
+              onChange={(event) => updateDraft({ rule_name: event.target.value })}
+              className="w-full rounded-lg border border-outline-variant px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+            />
+          </label>
+
+          <label className="space-y-1.5">
+            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Rule type</span>
+            {isEnforcedRuleType(ruleDraft.rule_type) ? (
+              <select
+                value={ruleDraft.rule_type}
+                onChange={(event) => updateDraft({ rule_type: event.target.value })}
+                className="w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+              >
+                {ENFORCED_RULE_TYPES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                readOnly
+                value={ruleDraft.rule_type}
+                className="w-full rounded-lg border border-outline-variant bg-[#f8f9fa] px-3 py-2 text-xs font-semibold outline-none"
+              />
+            )}
+          </label>
+
+          <label className="space-y-1.5">
+            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Severity</span>
+            <select
+              value={ruleDraft.severity}
+              onChange={(event) => updateDraft({ severity: event.target.value as Severity })}
+              className="w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+            >
+              {SEVERITIES.map((severity) => (
+                <option key={severity} value={severity}>
+                  {severity}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {renderRuleFields()}
+
+          <label className="space-y-1.5 md:col-span-2">
+            <span className="block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">Source text</span>
+            <textarea
+              value={ruleDraft.source_text}
+              onChange={(event) => updateDraft({ source_text: event.target.value })}
+              rows={3}
+              className="w-full resize-none rounded-lg border border-outline-variant px-3 py-2 text-xs font-semibold outline-none focus:border-secondary"
+            />
+          </label>
+
+          <label className="flex items-center gap-2 text-xs font-bold text-primary md:col-span-2">
+            <input
+              type="checkbox"
+              checked={ruleDraft.is_active}
+              onChange={(event) => updateDraft({ is_active: event.target.checked })}
+              className="h-4 w-4 rounded border-outline-variant"
+            />
+            Active
+          </label>
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-outline-variant/60 bg-[#f8f9fa] px-5 py-4">
+          <button
+            onClick={() => setRuleDraft(null)}
+            className="rounded-lg border border-outline-variant bg-white px-4 py-2 text-xs font-bold text-primary hover:bg-surface-container-low"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={saveRule}
+            disabled={savingRule}
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-[16px]">save</span>
+            {savingRule ? "Saving..." : "Save rule"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (selectedPolicy) {
     return (
-      <div className="flex flex-col h-full bg-background text-on-background min-h-[95vh]">
-        {/* Top Header Actions */}
-        <div className="px-8 py-6 border-b border-outline-variant bg-white sticky top-0 z-10">
-          <button 
+      <div className="flex min-h-[95vh] flex-col bg-background text-on-background">
+        <div className="sticky top-0 z-10 border-b border-outline-variant bg-white px-8 py-6">
+          <button
             onClick={() => setSelectedPolicy(null)}
-            className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors font-bold mb-4"
+            className="mb-4 flex items-center gap-1.5 text-xs font-bold text-on-surface-variant transition-colors hover:text-primary"
           >
             <span className="material-symbols-outlined text-[16px]">arrow_back</span>
             Back to Policy Documents
           </button>
-          
-          <div className="flex justify-between items-start">
+
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="flex items-center gap-1.5 text-[10px] font-black text-secondary uppercase tracking-widest">
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-secondary">
                 Policy Extractor / {selectedPolicy.name}
                 <span className="material-symbols-outlined text-[13px] text-secondary">auto_awesome</span>
               </div>
-              <h1 className="text-2xl font-black text-primary mt-1 tracking-tight">Review Extracted Rules</h1>
-              <p className="text-xs text-on-surface-variant mt-1 max-w-2xl">
-                AI has processed the uploaded policy document `{selectedPolicy.fileName}`. Review, edit, and confirm the rules below.
+              <h1 className="mt-1 text-2xl font-black tracking-tight text-primary">Review Extracted Rules</h1>
+              <p className="mt-1 max-w-2xl text-xs text-on-surface-variant">
+                AI has processed `{selectedPolicy.fileName}` into structured rules. Review, edit, and publish the active rules below.
               </p>
             </div>
-            
+
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => setSelectedPolicy(null)}
-                className="px-4 py-2 border border-outline-variant hover:bg-surface-container-low text-primary font-bold rounded-lg text-xs transition-colors"
+                className="rounded-lg border border-outline-variant px-4 py-2 text-xs font-bold text-primary transition-colors hover:bg-surface-container-low"
               >
-                Discard
+                Close
               </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".pdf,.txt"
-                hidden
-                onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
-              />
-              <button 
-                className="px-4 py-2 bg-primary hover:opacity-90 text-white font-bold rounded-lg text-xs transition-all flex items-center gap-2 shadow-sm"
-                onClick={() => setSelectedPolicy(null)}
+              <button
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
+                onClick={saveAndGoLive}
+                disabled={goingLive}
               >
                 <span className="material-symbols-outlined text-[16px]">publish</span>
-                Save & Go Live
+                {goingLive ? "Analyzing..." : "Save & Go Live"}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Rules list */}
-        <div className="p-8 space-y-6 max-w-[1200px] mx-auto w-full">
-          {status && (
-            <div className="rounded-xl border border-secondary/20 bg-secondary/5 px-4 py-3 text-xs text-secondary">
-              {status}
+        <div className="mx-auto w-full max-w-[1200px] space-y-6 p-8">
+          {(status || error) && (
+            <div className="rounded-xl border border-secondary/20 bg-secondary/5 px-4 py-3 text-xs font-semibold text-secondary">
+              {status || error}
             </div>
           )}
 
-          {loading && <div className="text-on-surface-variant text-xs">Loading rules…</div>}
+          {loading && <div className="text-xs text-on-surface-variant">Loading rules...</div>}
 
           <div className="space-y-4">
-            {data?.map((p, idx) => (
+            {rules.map((policy, index) => (
               <div
-                key={p.policy_id}
-                className={`border border-outline-variant/60 rounded-xl bg-white p-6 shadow-sm relative transition-opacity duration-200 ${
-                  p.is_active ? "opacity-100" : "opacity-60"
+                key={policy.policy_id}
+                className={`rounded-xl border border-outline-variant/60 bg-white p-6 shadow-sm transition-opacity duration-200 ${
+                  policy.is_active ? "opacity-100" : "opacity-60"
                 }`}
               >
-                <div className="flex justify-between items-start mb-6">
-                  
-                  {/* Title & Toggle switch */}
+                <div className="mb-6 flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-surface-container border border-outline-variant/50 flex items-center justify-center text-secondary">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-outline-variant/50 bg-surface-container text-secondary">
                       <span className="material-symbols-outlined text-[20px]">assignment</span>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-bold text-primary">
-                          Rule {idx + 1}: {p.rule_name}
+                          Rule {index + 1}: {policy.rule_name}
                         </span>
-                        
-                        {/* Custom Toggle Switch */}
+                        <span className="rounded-md border border-outline-variant bg-[#f8f9fa] px-2 py-0.5 text-[10px] font-black text-on-surface-variant">
+                          {policy.severity}
+                        </span>
+                        {!isEnforcedRuleType(policy.rule_type) && (
+                          <span className="rounded-md border border-outline-variant bg-white px-2 py-0.5 text-[10px] font-black text-on-surface-variant">
+                            REVIEW
+                          </span>
+                        )}
                         <button
-                          onClick={() => toggle(p)}
+                          onClick={() => toggle(policy)}
                           className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                            p.is_active ? "bg-secondary" : "bg-surface-container-high"
+                            policy.is_active ? "bg-secondary" : "bg-surface-container-high"
                           }`}
                         >
                           <span
                             className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              p.is_active ? "translate-x-4" : "translate-x-0"
+                              policy.is_active ? "translate-x-4" : "translate-x-0"
                             }`}
                           />
                         </button>
@@ -159,150 +668,110 @@ export function PolicyManager() {
                     </div>
                   </div>
 
-                  {/* Confidence & Delete Actions */}
-                  <div className="flex items-center gap-3">
-                    <button className="text-on-surface-variant hover:text-error transition-colors flex items-center justify-center p-1">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openEditRule(policy)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                    </button>
+                    <button
+                      onClick={() => removeRule(policy)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-error/10 hover:text-error"
+                    >
                       <span className="material-symbols-outlined text-[18px]">delete</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Form Input boxes (Condition / Constraint) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  
-                  {/* Condition Box */}
+                <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                    <label className="block text-[10px] font-black text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
                       Condition
                     </label>
                     <input
                       type="text"
                       readOnly
-                      value={
-                        p.rule_type === "AMOUNT_LIMIT" ? "Expense Amount >= $50.00" :
-                        p.rule_type === "TIP_CAP" ? "Services Tip / Meal Tip" :
-                        p.rule_type === "RECEIPT_REQUIRED" ? "Missing Receipt" :
-                        p.rule_type === "VEHICLE_RESTRICTION" ? "Rental Car Booking" :
-                        p.rule_type === "EXCLUDED_REIMBURSEMENT" ? "Personal/Infraction Charges" :
-                        p.rule_type === "CARD_USAGE_RESTRICTION" ? "Shared Card Usage" :
-                        p.rule_type === "MCC_BANNED" ? `Category == '${p.rule_name}'` : 
-                        `Category == '${p.rule_type}'`
-                      }
-                      className="w-full bg-[#f8f9fa] border border-outline-variant/60 rounded-lg px-3 py-2 text-xs text-on-background font-semibold outline-none"
+                      value={conditionLabel(policy)}
+                      className="w-full rounded-lg border border-outline-variant/60 bg-[#f8f9fa] px-3 py-2 text-xs font-semibold text-on-background outline-none"
                     />
                   </div>
 
-                  {/* Constraint Box */}
                   <div>
-                    <label className="block text-[10px] font-black text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-on-surface-variant">
                       Constraint
                     </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={
-                          p.rule_type === "AMOUNT_LIMIT" ? "Max Amount" :
-                          p.rule_type === "TIP_CAP" ? "Max Tip Limit" :
-                          p.rule_type === "RECEIPT_REQUIRED" ? "Receipt Threshold" :
-                          p.rule_type === "VEHICLE_RESTRICTION" ? "Sharing Restriction" :
-                          p.rule_type === "EXCLUDED_REIMBURSEMENT" ? "Non-reimbursable" :
-                          p.rule_type === "CARD_USAGE_RESTRICTION" ? "Card Holder Restriction" :
-                          "Banned Category"
-                        }
-                        className="w-1/2 bg-[#f8f9fa] border border-outline-variant/60 rounded-lg px-3 py-2 text-xs text-on-background font-semibold outline-none"
-                      />
-                      <input
-                        type="text"
-                        readOnly
-                        value={
-                          p.rule_type === "AMOUNT_LIMIT"
-                            ? `$${p.rule_parameters?.max_amount_usd || p.rule_parameters?.limit || 50.0}`
-                            : p.rule_type === "TIP_CAP"
-                            ? `${p.rule_parameters?.max_tip_pct || 15}%`
-                            : p.rule_type === "RECEIPT_REQUIRED"
-                            ? `Over $${p.rule_parameters?.min_amount_usd || 50.0}`
-                            : p.rule_type === "VEHICLE_RESTRICTION"
-                            ? "4+ Travelers Required"
-                            : p.rule_type === "EXCLUDED_REIMBURSEMENT"
-                            ? "Traffic/Parking/Personal Fees"
-                            : p.rule_type === "CARD_USAGE_RESTRICTION"
-                            ? "Authorized User Only"
-                            : "Declined"
-                        }
-                        className="w-1/2 bg-white border border-outline-variant rounded-lg px-3 py-2 text-xs text-on-background font-semibold outline-none"
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      readOnly
+                      value={constraintLabel(policy)}
+                      className="w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-xs font-semibold text-on-background outline-none"
+                    />
                   </div>
                 </div>
 
-                {/* Extracted quote block */}
-                {p.source_text && (
-                  <div className="mt-4 flex items-start gap-1.5 text-[11px] text-on-surface-variant leading-relaxed">
-                    <span className="material-symbols-outlined text-[13px] text-secondary mt-0.5">format_quote</span>
-                    <span className="italic font-medium">
-                      Extracted from Document Source: "{p.source_text}"
-                    </span>
+                {policy.source_text && (
+                  <div className="mt-4 flex items-start gap-1.5 text-[11px] font-medium leading-relaxed text-on-surface-variant">
+                    <span className="material-symbols-outlined mt-0.5 text-[13px] text-secondary">format_quote</span>
+                    <span className="italic">Extracted from Document Source: "{policy.source_text}"</span>
                   </div>
                 )}
               </div>
             ))}
 
-            {/* Add Custom Rule Card (Dashed Border) */}
-            <button className="w-full border-2 border-dashed border-outline-variant/60 hover:border-secondary/60 rounded-xl p-6 bg-transparent flex flex-col items-center justify-center gap-2 hover:bg-surface-container-low/20 transition-all">
-              <div className="w-7 h-7 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant">
+            <button
+              onClick={openNewRule}
+              className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline-variant/60 bg-transparent p-6 transition-all hover:border-secondary/60 hover:bg-surface-container-low/20"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-outline-variant text-on-surface-variant">
                 <span className="material-symbols-outlined text-[18px]">add</span>
               </div>
               <span className="text-xs font-bold text-on-surface-variant">Add Custom Rule</span>
             </button>
           </div>
         </div>
+        {ruleModal}
       </div>
     );
   }
 
-  // If no policies have been uploaded yet, render empty state dropzone
   if (uploadedPolicies.length === 0) {
     return (
-      <div className="flex flex-col h-full bg-background text-on-background min-h-[95vh]">
-        {/* Top Header Actions */}
-        <div className="px-8 py-6 border-b border-outline-variant bg-surface sticky top-0 z-10">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-1.5 text-[10px] font-black text-secondary uppercase tracking-widest">
-                Compliance Engine / Policy Rulesets
-                <span className="material-symbols-outlined text-[13px] text-secondary">auto_awesome</span>
-              </div>
-              <h1 className="text-2xl font-black text-primary mt-1 tracking-tight">Policy Documents</h1>
-              <p className="text-xs text-on-surface-variant mt-1 whitespace-nowrap block">
-                Manage corporate guidelines and track AI rule extraction from policy documents.
-              </p>
+      <div className="flex min-h-[95vh] flex-col bg-background text-on-background">
+        <div className="sticky top-0 z-10 border-b border-outline-variant bg-surface px-8 py-6">
+          <div>
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-secondary">
+              Compliance Engine / Policy Rulesets
+              <span className="material-symbols-outlined text-[13px] text-secondary">auto_awesome</span>
             </div>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-primary">Policy Documents</h1>
+            <p className="mt-1 block text-xs text-on-surface-variant">
+              Manage corporate guidelines and track AI rule extraction from policy documents.
+            </p>
           </div>
         </div>
 
-        {/* Main Upload Area */}
-        <div className="flex-grow flex items-center justify-center p-8 max-w-[1200px] mx-auto w-full">
-          <div className="w-full max-w-xl border-2 border-dashed border-outline-variant/70 rounded-2xl p-10 bg-white flex flex-col items-center justify-center text-center gap-5 shadow-sm">
-            <div className="w-14 h-14 rounded-2xl border border-outline-variant flex items-center justify-center text-secondary bg-surface-container shadow-sm animate-pulse">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-grow items-center justify-center p-8">
+          <div className="flex w-full max-w-xl flex-col items-center justify-center gap-5 rounded-2xl border-2 border-dashed border-outline-variant/70 bg-white p-10 text-center shadow-sm">
+            <div className="flex h-14 w-14 animate-pulse items-center justify-center rounded-2xl border border-outline-variant bg-surface-container text-secondary shadow-sm">
               <span className="material-symbols-outlined text-[32px]">upload_file</span>
             </div>
             <div>
               <h2 className="text-base font-bold text-primary">No policy rulesets configured</h2>
-              <p className="text-xs text-on-surface-variant mt-2 max-w-sm mx-auto leading-relaxed">
-                Please upload your organization's Travel & Expense policy document (PDF or TXT) to automatically parse compliance rules and begin auditing transactions.
+              <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-on-surface-variant">
+                Please upload your organization's Travel & Expense policy document to automatically parse compliance rules and begin auditing transactions.
               </p>
             </div>
-            
+
             <input
               ref={fileRef}
               type="file"
               accept=".pdf,.txt"
               hidden
-              onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+              onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0])}
             />
-            <button 
-              className="px-5 py-2.5 bg-primary hover:opacity-90 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+            <button
+              className="flex cursor-pointer items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:opacity-90"
               onClick={() => fileRef.current?.click()}
             >
               <span className="material-symbols-outlined text-[16px]">publish</span>
@@ -310,133 +779,81 @@ export function PolicyManager() {
             </button>
           </div>
         </div>
-
-        {/* Uploading progress modal */}
-        {uploading && (
-          <div className="fixed inset-0 bg-[#0c0e12]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white border border-outline-variant rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
-              
-              {/* Modal Header */}
-              <div className="px-6 py-4 border-b border-outline-variant/60 flex justify-between items-center bg-white">
-                <div className="flex items-center gap-2 text-primary font-bold text-sm">
-                  <span className="material-symbols-outlined text-secondary text-[20px]">shield</span>
-                  Upload & Analyze Policy
-                </div>
-                <button 
-                  onClick={() => setUploading(false)}
-                  className="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center"
-                >
-                  <span className="material-symbols-outlined text-[20px]">close</span>
-                </button>
-              </div>
-
-              {/* Modal Body */}
-              <div className="p-6 space-y-6">
-                
-                {/* Scan Card Container */}
-                <div className="border border-dashed border-secondary/50 rounded-xl p-6 bg-secondary/5 flex flex-col items-center justify-center text-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-white border border-outline-variant shadow flex items-center justify-center text-secondary">
-                    <span className="material-symbols-outlined text-[26px]">find_in_page</span>
-                  </div>
-                  <div>
-                    <div className="text-xs font-black text-primary">Analyzing Policy Document...</div>
-                    <div className="text-[10px] text-on-surface-variant font-mono mt-0.5">Global_TE_Policy_2026.pdf</div>
-                  </div>
-                  
-                  {/* Progress bar */}
-                  <div className="w-full space-y-1.5 mt-2">
-                    <div className="flex justify-between items-center text-[9px] font-black text-secondary">
-                      <span>PROCESSING DATA</span>
-                      <span>65%</span>
-                    </div>
-                    <div className="w-full bg-[#e8eaed] h-2 rounded-full overflow-hidden border border-outline-variant/30">
-                      <div className="h-full bg-secondary rounded-full" style={{ width: "65%" }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
 
-  // Otherwise, render list of all uploaded policies
   return (
-    <div className="flex flex-col h-full bg-background text-on-background min-h-[95vh]">
-      
-      {/* Top Header Actions */}
-      <div className="px-8 py-6 border-b border-outline-variant bg-surface sticky top-0 z-10">
-        <div className="flex justify-between items-start">
+    <div className="flex min-h-[95vh] flex-col bg-background text-on-background">
+      <div className="sticky top-0 z-10 border-b border-outline-variant bg-surface px-8 py-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="flex items-center gap-1.5 text-[10px] font-black text-secondary uppercase tracking-widest">
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-secondary">
               Compliance Engine / Policy Rulesets
               <span className="material-symbols-outlined text-[13px] text-secondary">auto_awesome</span>
             </div>
-            <h1 className="text-2xl font-black text-primary mt-1 tracking-tight">Policy Documents</h1>
-            <p className="text-xs text-on-surface-variant mt-1 whitespace-nowrap block">
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-primary">Policy Documents</h1>
+            <p className="mt-1 block text-xs text-on-surface-variant">
               Manage corporate guidelines and track AI rule extraction from policy documents. Select a document below to edit or verify its active rules.
             </p>
           </div>
-          
+
           <div>
             <input
               ref={fileRef}
               type="file"
               accept=".pdf,.txt"
               hidden
-              onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+              onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0])}
             />
-            <button 
-              className="px-4 py-2 bg-primary hover:opacity-90 text-white font-bold rounded-lg text-xs transition-all flex items-center gap-2 shadow-sm"
+            <button
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:opacity-90"
               onClick={() => fileRef.current?.click()}
             >
               <span className="material-symbols-outlined text-[16px]">upload_file</span>
-              {uploading ? "Processing…" : "Upload Policy (PDF)"}
+              {uploading ? "Processing..." : "Upload Policy (PDF)"}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Policies grid */}
-      <div className="p-8 space-y-6 max-w-[1200px] mx-auto w-full">
-        {status && (
-          <div className="rounded-xl border border-secondary/20 bg-secondary/5 px-4 py-3 text-xs text-secondary">
-            {status}
+      <div className="mx-auto w-full max-w-[1200px] space-y-6 p-8">
+        {(status || error) && (
+          <div className="rounded-xl border border-secondary/20 bg-secondary/5 px-4 py-3 text-xs font-semibold text-secondary">
+            {status || error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {uploadedPolicies.map((policy) => (
             <div
               key={policy.id}
               onClick={() => setSelectedPolicy(policy)}
-              className="border border-outline-variant/65 rounded-xl bg-white p-6 shadow-sm hover:border-secondary hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between"
+              className="flex cursor-pointer flex-col justify-between rounded-xl border border-outline-variant/65 bg-white p-6 shadow-sm transition-all duration-200 hover:border-secondary hover:shadow-md"
             >
               <div>
-                <h3 className="text-sm font-bold text-primary mb-1 mt-2">{policy.name}</h3>
-                <p className="text-[11px] text-on-surface-variant font-semibold flex items-center gap-1 mb-4">
+                <h3 className="mb-1 mt-2 text-sm font-bold text-primary">{policy.name}</h3>
+                <p className="mb-4 flex items-center gap-1 text-[11px] font-semibold text-on-surface-variant">
                   <span className="material-symbols-outlined text-[14px]">description</span>
                   {policy.fileName}
                 </p>
 
-                <div className="grid grid-cols-2 gap-4 py-3 border-t border-b border-outline-variant/40 my-4 text-[11px]">
+                <div className="my-4 grid grid-cols-2 gap-4 border-y border-outline-variant/40 py-3 text-[11px]">
                   <div>
-                    <span className="text-on-surface-variant block font-medium">Extracted Rules</span>
-                    <span className="font-bold text-primary text-sm">{policy.rulesCount} Rules</span>
+                    <span className="block font-medium text-on-surface-variant">Extracted Rules</span>
+                    <span className="text-sm font-bold text-primary">{policy.rulesCount} Rules</span>
                   </div>
                   <div>
-                    <span className="text-on-surface-variant block font-medium">Uploaded By</span>
-                    <span className="font-bold text-primary text-sm truncate max-w-full block">{policy.uploadedBy}</span>
+                    <span className="block font-medium text-on-surface-variant">Uploaded By</span>
+                    <span className="block max-w-full truncate text-sm font-bold text-primary">{policy.uploadedBy}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-between items-center text-[10px] text-on-surface-variant font-semibold mt-2">
-                <span>Size: {policy.fileSize} • {policy.uploadedAt}</span>
-                <span className="text-secondary font-bold flex items-center gap-0.5 group">
-                  Review Rules 
+              <div className="mt-2 flex items-center justify-between text-[10px] font-semibold text-on-surface-variant">
+                <span>Size: {policy.fileSize} | {policy.uploadedAt}</span>
+                <span className="group flex items-center gap-0.5 font-bold text-secondary">
+                  Review Rules
                   <span className="material-symbols-outlined text-[14px] transition-transform group-hover:translate-x-0.5">arrow_forward</span>
                 </span>
               </div>
@@ -444,129 +861,6 @@ export function PolicyManager() {
           ))}
         </div>
       </div>
-
-      {/* Uploading progress modal */}
-      {uploading && (
-        <div className="fixed inset-0 bg-[#0c0e12]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-outline-variant rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
-            
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-outline-variant/60 flex justify-between items-center bg-white">
-              <div className="flex items-center gap-2 text-primary font-bold text-sm">
-                <span className="material-symbols-outlined text-secondary text-[20px]">shield</span>
-                Upload & Analyze Policy
-              </div>
-              <button 
-                onClick={() => setUploading(false)}
-                className="text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-6">
-              
-              {/* Scan Card Container */}
-              <div className="border border-dashed border-secondary/50 rounded-xl p-6 bg-secondary/5 flex flex-col items-center justify-center text-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-white border border-outline-variant shadow flex items-center justify-center text-secondary">
-                  <span className="material-symbols-outlined text-[26px]">find_in_page</span>
-                </div>
-                <div>
-                  <div className="text-xs font-black text-primary">Analyzing Policy Document...</div>
-                  <div className="text-[10px] text-on-surface-variant font-mono mt-0.5">Q3_Global_T_and_E_Policy_v4.pdf</div>
-                </div>
-                
-                {/* Progress bar */}
-                <div className="w-full space-y-1.5 mt-2">
-                  <div className="flex justify-between items-center text-[9px] font-black text-secondary">
-                    <span>PROCESSING DATA</span>
-                    <span>65%</span>
-                  </div>
-                  <div className="w-full bg-[#e8eaed] h-2 rounded-full overflow-hidden border border-outline-variant/30">
-                    <div className="h-full bg-secondary rounded-full" style={{ width: "65%" }}></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Extraction Insights Checklist */}
-              <div className="space-y-3">
-                <div className="text-[10px] font-black text-on-surface-variant uppercase tracking-wider">Extraction Insights</div>
-                
-                <div className="space-y-2.5">
-                  {/* Item 1 */}
-                  <div className="flex items-start gap-3 bg-[#f8f9fa] border border-outline-variant/50 rounded-xl p-3">
-                    <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 mt-0.5 shrink-0">
-                      <span className="material-symbols-outlined text-[13px]">done</span>
-                    </span>
-                    <div>
-                      <div className="text-[11px] font-bold text-primary">Identifying spending thresholds...</div>
-                      <div className="text-[10px] text-on-surface-variant font-medium mt-0.5">Found 14 distinct categorical limits.</div>
-                    </div>
-                  </div>
-
-                  {/* Item 2 */}
-                  <div className="flex items-start gap-3 bg-[#f8f9fa] border border-outline-variant/50 rounded-xl p-3">
-                    <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 mt-0.5 shrink-0">
-                      <span className="material-symbols-outlined text-[13px]">done</span>
-                    </span>
-                    <div>
-                      <div className="text-[11px] font-bold text-primary">Extracting MCC restrictions...</div>
-                      <div className="text-[10px] text-on-surface-variant font-medium mt-0.5">Mapped 42 blocked merchant categories.</div>
-                    </div>
-                  </div>
-
-                  {/* Item 3 */}
-                  <div className="flex items-start gap-3 bg-secondary/5 border border-secondary/20 rounded-xl p-3">
-                    <span className="w-5 h-5 rounded-full bg-secondary/10 text-secondary flex items-center justify-center border border-secondary/20 mt-0.5 shrink-0 animate-spin">
-                      <span className="material-symbols-outlined text-[13px]">progress_activity</span>
-                    </span>
-                    <div>
-                      <div className="text-[11px] font-bold text-primary">Mapping approval hierarchies...</div>
-                      <div className="text-[10px] text-on-surface-variant font-medium mt-0.5">Cross-referencing organizational chart data.</div>
-                    </div>
-                  </div>
-
-                  {/* Item 4 */}
-                  <div className="flex items-start gap-3 opacity-55 p-3">
-                    <span className="w-5 h-5 rounded-full bg-[#f1f3f4] text-on-surface-variant flex items-center justify-center border border-outline-variant mt-0.5 shrink-0">
-                      <span className="material-symbols-outlined text-[13px]">circle</span>
-                    </span>
-                    <div>
-                      <div className="text-[11px] font-bold text-primary">Synthesizing anomaly detection rules...</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 bg-[#f8f9fa] border-t border-outline-variant/60 flex justify-between items-center">
-              <div className="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant">
-                <span className="material-symbols-outlined text-[14px]">info</span>
-                Analysis may take up to 60 seconds.
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setUploading(false)}
-                  className="px-4 py-2 border border-outline-variant bg-white hover:bg-surface-container-low text-primary font-bold rounded-lg text-xs transition-colors shadow-sm"
-                >
-                  Cancel
-                </button>
-                <button 
-                  disabled
-                  className="px-4 py-2 bg-[#f1f3f4] border border-outline-variant/50 text-[#c6c6cd] font-bold rounded-lg text-xs cursor-not-allowed flex items-center gap-1"
-                >
-                  Next: Review Rules
-                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -123,3 +123,46 @@ class FraudCluster(Base):
     risk_score: Mapped[int] = mapped_column(Integer, default=0)
     recommended_action: Mapped[str | None] = mapped_column(String(24), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ComplianceCase(Base):
+    __tablename__ = "compliance_cases"
+
+    case_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    fingerprint: Mapped[str] = mapped_column(String(256), unique=True, index=True)
+    case_type: Mapped[str] = mapped_column(String(16), index=True)
+    status: Mapped[str] = mapped_column(String(24), default="OPEN", index=True)
+    severity: Mapped[str] = mapped_column(String(16), index=True)
+    risk_score: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    exposure_cad: Mapped[float] = mapped_column(Float, default=0.0)
+    title: Mapped[str] = mapped_column(String(160))
+    summary: Mapped[str] = mapped_column(Text)
+    recommended_action: Mapped[str] = mapped_column(String(128))
+    evidence: Mapped[dict] = mapped_column(JSON, default=dict)
+    related_transaction_ids: Mapped[list] = mapped_column(JSON, default=list)
+    related_employee_names: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    events = relationship("ComplianceCaseEvent", back_populates="case")
+
+
+class ComplianceCaseEvent(Base):
+    __tablename__ = "compliance_case_events"
+
+    event_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    case_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("compliance_cases.case_id"), index=True
+    )
+    action: Mapped[str] = mapped_column(String(32), index=True)
+    actor: Mapped[str] = mapped_column(String(128), default="Finance Manager")
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    snapshot: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    case = relationship("ComplianceCase", back_populates="events")
+
+
+Index("ix_compliance_case_status_risk", ComplianceCase.status, ComplianceCase.risk_score)

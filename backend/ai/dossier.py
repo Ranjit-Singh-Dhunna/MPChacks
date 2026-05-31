@@ -9,7 +9,8 @@ from datetime import timedelta
 from sqlalchemy.orm import Session
 
 from ai.gemini_client import gemini
-from models import Employee, Transaction
+from compliance.cases import OPEN_STATUSES
+from models import ComplianceCase, Employee, Transaction
 from schemas import (
     ApprovalDossier,
     EmployeeResponse,
@@ -67,11 +68,22 @@ def prepare_dossier_data(db: Session, txn: Transaction) -> dict:
                        Transaction.transaction_date <= txn.transaction_date)
                .order_by(Transaction.transaction_date.desc())
                .all())
+    compliance_cases = (
+        db.query(ComplianceCase)
+        .filter(ComplianceCase.status.in_(list(OPEN_STATUSES)))
+        .all()
+    )
+    warnings = [
+        f"{case.severity}: {case.title}"
+        for case in compliance_cases
+        if txn.transaction_id in (case.related_transaction_ids or [])
+    ]
     return {
         "txn": TransactionResponse.model_validate(txn),
         "emp": EmployeeResponse.model_validate(emp) if emp else None,
         "history": [TransactionResponse.model_validate(t) for t in history],
-        "job_level": txn.job_level
+        "job_level": txn.job_level,
+        "compliance_warnings": warnings,
     }
 
 
@@ -80,6 +92,7 @@ def build_dossier_from_data(data: dict) -> ApprovalDossier:
     emp = data["emp"]
     history = data["history"]
     job_level = data["job_level"]
+    compliance_warnings = data.get("compliance_warnings", [])
 
     month_spend = sum(t.amount_cad for t in history)
     budget = emp.monthly_budget if emp else 1.0
@@ -118,6 +131,8 @@ def build_dossier_from_data(data: dict) -> ApprovalDossier:
         risk_factors=reco["risk_factors"],
         mitigating_factors=reco["mitigating_factors"],
         risk_score=txn.ai_risk_score or 0,
+        compliance_warning_count=len(compliance_warnings),
+        compliance_warnings=compliance_warnings[:5],
     )
 
 

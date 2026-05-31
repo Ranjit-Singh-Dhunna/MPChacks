@@ -56,21 +56,24 @@ class RuleEngine:
         mcc_filter = p.get("applies_to_mcc")
         if mcc_filter and txn.mcc_code not in mcc_filter:
             return RuleResult(violated=False)
-        if txn.amount_usd > limit and not txn.is_pre_authorized:
+        requires_pre_auth = bool(p.get("requires_pre_authorization", True))
+        if txn.amount_usd > limit and (not requires_pre_auth or not txn.is_pre_authorized):
+            suffix = " with no pre-authorization" if requires_pre_auth else ""
             return RuleResult(
                 violated=True, severity=rule.severity, rule_name=rule.rule_name,
-                reason=f"${txn.amount_usd:.2f} USD exceeds ${limit:.0f} pre-auth limit "
-                       f"with no pre-authorization",
+                reason=f"${txn.amount_usd:.2f} USD exceeds ${limit:.0f} limit{suffix}",
             )
         return RuleResult(violated=False)
 
     def _fx_threshold(self, rule, txn, p) -> RuleResult:
         limit_cad = float(p.get("max_amount_cad", 68.95))
-        if txn.amount_cad > limit_cad and not txn.is_pre_authorized:
+        requires_pre_auth = bool(p.get("requires_pre_authorization", True))
+        if txn.amount_cad > limit_cad and (not requires_pre_auth or not txn.is_pre_authorized):
+            suffix = " with no pre-authorization" if requires_pre_auth else ""
             return RuleResult(
                 violated=True, severity=rule.severity, rule_name=rule.rule_name,
                 reason=f"${txn.amount_usd:.2f} USD = ${txn.amount_cad:.2f} CAD exceeds "
-                       f"${limit_cad:.2f} CAD threshold (FX-adjusted)",
+                       f"${limit_cad:.2f} CAD threshold (FX-adjusted){suffix}",
             )
         return RuleResult(violated=False)
 
@@ -96,13 +99,17 @@ class RuleEngine:
     def _budget_cap(self, rule, txn, employee, month_spend_cad, p) -> RuleResult:
         if employee is None:
             return RuleResult(violated=False)
-        budget = float(employee.monthly_budget)
+        department = p.get("department")
+        if department and txn.department != department:
+            return RuleResult(violated=False)
+        budget = float(p.get("limit_cad") or employee.monthly_budget)
         projected = month_spend_cad + txn.amount_cad
         if projected > budget:
+            owner = department or employee.name
             return RuleResult(
                 violated=True, severity=rule.severity, rule_name=rule.rule_name,
                 reason=f"Monthly spend ${projected:.2f} CAD exceeds "
-                       f"${budget:.0f} CAD budget for {employee.name}",
+                       f"${budget:.0f} CAD budget for {owner}",
             )
         return RuleResult(violated=False)
 

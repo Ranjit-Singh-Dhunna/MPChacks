@@ -7,6 +7,7 @@ from models import FraudCluster, Policy
 from policy.extractor import extract_policy_rules
 from schemas import (
     FraudClusterResponse,
+    PolicyCreate,
     PolicyResponse,
     PolicyUpdate,
     PolicyUploadResult,
@@ -19,6 +20,22 @@ router = APIRouter(prefix="/api", tags=["policy"])
 def list_rules(db: Session = Depends(get_db)):
     rows = db.query(Policy).order_by(Policy.policy_id).all()
     return [PolicyResponse.model_validate(r) for r in rows]
+
+
+@router.post("/policy/rules", response_model=PolicyResponse)
+def create_rule(rule: PolicyCreate, db: Session = Depends(get_db)):
+    p = Policy(
+        rule_name=rule.rule_name,
+        rule_type=rule.rule_type,
+        rule_parameters=rule.rule_parameters,
+        severity=rule.severity,
+        is_active=rule.is_active,
+        source_text=rule.source_text,
+    )
+    db.add(p)
+    db.commit()
+    db.refresh(p)
+    return PolicyResponse.model_validate(p)
 
 
 @router.post("/policy/upload", response_model=PolicyUploadResult)
@@ -56,6 +73,16 @@ def update_rule(policy_id: int, update: PolicyUpdate, db: Session = Depends(get_
     db.commit()
     db.refresh(rule)
     return PolicyResponse.model_validate(rule)
+
+
+@router.delete("/policy/rules/{policy_id}")
+def delete_rule(policy_id: int, db: Session = Depends(get_db)):
+    rule = db.query(Policy).filter_by(policy_id=policy_id).first()
+    if not rule:
+        raise HTTPException(404, "Rule not found")
+    db.delete(rule)
+    db.commit()
+    return {"deleted": policy_id}
 
 
 @router.get("/fraud/clusters", response_model=list[FraudClusterResponse])
